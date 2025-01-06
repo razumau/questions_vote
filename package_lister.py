@@ -26,6 +26,7 @@ class Package:
             end_date=datetime.fromisoformat(package_dict['endDate']),
             questions_count=package_dict['questions']
         )
+from utils import sleep_around
 
 
 class PackageLister:
@@ -37,7 +38,7 @@ class PackageLister:
         for page in range(self.first_page, self.last_page + 1):
             if page % 10 == 1:
                 print(f"Processing page {page}")
-            time.sleep(random.uniform(0.3, 0.7))
+            sleep_around(0.5)
             self.create_packages_from_page(page)
 
     def create_packages_from_page(self, page: int):
