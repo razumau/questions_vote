@@ -1,4 +1,3 @@
-import os
 import sqlite3
 import os
 
@@ -54,14 +53,36 @@ def setup_database():
             )
         ''')
 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS packages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    gotquestions_id INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    start_date TIMESTAMP,
+                    end_date TIMESTAMP,
+                    questions_count INTEGER,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+        ''')
+
         conn.commit()
+    print("Tables created")
 
 def clean_database():
     with sqlite3.connect(DB_PATH) as conn:
         cursor = conn.cursor()
+        cursor.execute('''DELETE FROM packages''')
         cursor.execute('''DELETE FROM images''')
         cursor.execute('''DELETE FROM questions''')
         cursor.execute('''DELETE FROM votes''')
         conn.commit()
 
-setup_database()
+def drop_tables():
+    with sqlite3.connect(DB_PATH) as conn:
+        cursor = conn.cursor()
+        cursor.execute('''DROP TABLE IF EXISTS packages''')
+        cursor.execute('''DROP TABLE IF EXISTS images''')
+        cursor.execute('''DROP TABLE IF EXISTS questions''')
+        cursor.execute('''DROP TABLE IF EXISTS votes''')
+        conn.commit()
