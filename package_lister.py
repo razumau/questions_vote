@@ -7,25 +7,6 @@ import requests
 
 from nextjs_helper import extract_next_props
 from db import connection, setup_database, drop_tables, clean_database
-
-
-@dataclass
-class Package:
-    gotquestions_id: int
-    title: str
-    start_date: datetime
-    end_date: datetime
-    questions_count: int
-
-    @classmethod
-    def build_package(cls, package_dict):
-        return cls(
-            gotquestions_id=package_dict['id'],
-            title=package_dict['title'],
-            start_date=datetime.fromisoformat(package_dict['startDate']),
-            end_date=datetime.fromisoformat(package_dict['endDate']),
-            questions_count=package_dict['questions']
-        )
 from utils import sleep_around
 
 

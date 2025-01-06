@@ -1,48 +1,20 @@
-from dataclasses import dataclass
 from itertools import chain
 
 import requests
 
-from db import connection, setup_database, drop_tables
+from db import connection, setup_database
+from models import Question
 from nextjs_helper import extract_next_props
 
-@dataclass
-class Question:
-    got_questions_id: int
-    question: str
-    answer: str
-    accepted_answer: str
-    comment: str
-    source: str
-    handout_str: str
-    handout_img: str
-    author_id: int
-    package_id: int
-    difficulty: float
-    is_incorrect: bool
-
-    @classmethod
-    def build_question(cls, question_dict):
-        return cls(got_questions_id=question_dict['id'],
-                   question=question_dict['text'],
-                   answer=question_dict['answer'],
-                   accepted_answer=question_dict['zachet'],
-                   comment=question_dict['comment'],
-                   handout_str=question_dict['razdatkaText'],
-                   handout_img=question_dict['razdatkaPic'],
-                   source=question_dict['source'],
-                   author_id=question_dict.get('authors', [])[0]['id'],
-                   package_id=question_dict.get('packId', -1),
-                   difficulty=question_dict['complexity'],
-                   is_incorrect=question_dict['takenDown']
-                   )
-
-
 class PackageParser:
-    def __init__(self, package_id: int):
+    def __init__(self, package_id: int, rewrite: bool = False):
+        self.package_id = package_id
         self.url = f'https://gotquestions.online/pack/{package_id}'
+        self.rewrite = rewrite
 
     def import_package(self):
+        self.maybe_drop_old_entries()
+
         response = requests.get(self.url)
         if response.status_code != 200:
             print(f"Error: Unable to fetch URL. Status code: {response.status_code}")
@@ -56,6 +28,10 @@ class PackageParser:
         for question_dict in all_questions:
             question = Question.build_question(question_dict)
             self.insert_question(question)
+
+    def maybe_drop_old_entries(self):
+        if self.rewrite:
+            Question.delete_all_questions_for_package(self.package_id)
 
     @staticmethod
     def insert_question(question: Question):
@@ -85,7 +61,6 @@ class PackageParser:
 
 
 if __name__ == '__main__':
-    drop_tables()
     setup_database()
-    parser = PackageParser(6124)
+    parser = PackageParser(5220, rewrite=True)
     parser.import_package()

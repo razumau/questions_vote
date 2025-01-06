@@ -1,0 +1,55 @@
+from dataclasses import dataclass
+from typing import Optional
+
+from db import connection
+
+
+@dataclass
+class Question:
+    got_questions_id: int
+    question: str
+    answer: str
+    accepted_answer: str
+    comment: str
+    source: str
+    handout_str: str
+    handout_img: str
+    author_id: Optional[int]
+    package_id: int
+    difficulty: float
+    is_incorrect: bool
+
+    @classmethod
+    def build_question(cls, question_dict):
+        author_id = (question_dict['authors'] or [{'id': None}])[0]['id']
+
+        return cls(got_questions_id=question_dict['id'],
+               question=question_dict['text'],
+               answer=question_dict['answer'],
+               accepted_answer=question_dict['zachet'],
+               comment=question_dict['comment'],
+               handout_str=question_dict['razdatkaText'],
+               handout_img=question_dict['razdatkaPic'],
+               source=question_dict['source'],
+               author_id=author_id,
+               package_id=question_dict.get('packId', -1),
+               difficulty=question_dict['complexity'],
+               is_incorrect=question_dict['takenDown']
+               )
+
+    @classmethod
+    def has_questions_from_package(cls, package_id):
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM questions WHERE package_id = ?', (package_id,))
+            return cursor.fetchone()[0] > 0
+
+    @classmethod
+    def delete_all_questions_for_package(cls, package_id):
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM images WHERE question_id IN (SELECT id FROM questions WHERE package_id = ?)''',
+                           (package_id,))
+            cursor.execute('DELETE FROM questions WHERE package_id = ?', (package_id,))
+            conn.commit()
