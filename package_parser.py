@@ -73,8 +73,13 @@ class PackageParser:
 
             if question.handout_img:
                 question_id = cursor.lastrowid
-                cursor.execute('''INSERT INTO images (question_id, image_url) VALUES (?, ?)''',
-                               (question_id, question.handout_img))
+                image_url = f'https://gotquestions.online/{question.handout_img}'
+                response = requests.get(image_url)
+                image_data = response.content
+                mime_type = response.headers.get('Content-Type')
+                cursor.execute('''
+                    INSERT INTO images (question_id, image_url, data, mime_type) VALUES (?, ?, ?, ?)
+                ''', (question_id, question.handout_img, image_data, mime_type))
 
             conn.commit()
 
