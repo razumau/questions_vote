@@ -11,3 +11,8 @@ wheels/
 .env
 
 .idea
+.DS_Store
+test.docx
+test.html
+test.json
+list.json
