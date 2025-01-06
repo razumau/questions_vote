@@ -18,13 +18,18 @@ def setup_database():
             CREATE TABLE IF NOT EXISTS questions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 gotquestions_id INTEGER NOT NULL,
+                package_id INTEGER NOT NULL,
                 question TEXT NOT NULL,
                 answer TEXT NOT NULL,
                 accepted_answer TEXT,
                 handout_str TEXT,
                 comment TEXT,
                 source TEXT,
-                author_id INTEGER
+                author_id INTEGER,
+                difficulty REAL,
+                is_incorrect BOOLEAN,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
