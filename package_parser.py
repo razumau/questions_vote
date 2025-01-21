@@ -7,7 +7,7 @@ from models import Question
 from nextjs_helper import extract_next_props
 
 class PackageParser:
-    def __init__(self, package_id: int, rewrite: bool = False):
+    def __init__(self, package_id: int, rewrite: bool = True):
         self.package_id = package_id
         self.url = f'https://gotquestions.online/pack/{package_id}'
         self.rewrite = rewrite
@@ -23,8 +23,11 @@ class PackageParser:
         props = extract_next_props(response)
         if not props:
             return
-        tours = props['props']['pageProps']['pack']['tours']
-        all_questions = chain.from_iterable(tour['questions'] for tour in tours)
+        try:
+            tours = props['props']['pageProps']['pack']['tours']
+            all_questions = chain.from_iterable(tour['questions'] for tour in tours)
+        except KeyError:
+            all_questions = props['props']['pageProps']['tour']['questions']
         for question_dict in all_questions:
             question = Question.build_question(question_dict)
             self.insert_question(question)
