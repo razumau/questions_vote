@@ -1,5 +1,7 @@
+import sqlite3
 from dataclasses import dataclass
 from typing import Optional
+from datetime import datetime as dt
 
 from db import connection
 
@@ -49,7 +51,23 @@ class Question:
         with connection() as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                DELETE FROM images WHERE question_id IN (SELECT id FROM questions WHERE package_id = ?)''',
-                           (package_id,))
+                DELETE FROM images 
+                WHERE question_id IN (SELECT id FROM questions WHERE package_id = ?)
+            ''', (package_id,))
             cursor.execute('DELETE FROM questions WHERE package_id = ?', (package_id,))
             conn.commit()
+
+    @classmethod
+    def question_ids_for_year(cls, year):
+        start_timestamp = dt.timestamp(dt(year, 1, 1))
+        end_timestamp = dt.timestamp(dt(year + 1, 1, 1))
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT id FROM questions 
+                WHERE package_id IN (
+                    SELECT gotquestions_id FROM packages WHERE end_date between ? and ?
+                )
+                AND is_incorrect = 0
+            ''', (start_timestamp, end_timestamp))
+            return [row[0] for row in cursor.fetchall()]
