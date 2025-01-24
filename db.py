@@ -105,6 +105,31 @@ def setup_database():
                 )
         ''')
 
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tournaments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT NOT NULL,
+                    state INTEGER DEFAULT 0,
+                    initial_k REAL DEFAULT 64.0,
+                    minimum_k REAL DEFAULT 16.0,
+                    std_dev_multiplier REAL DEFAULT 2.0,
+                    initial_phase_matches INTEGER DEFAULT 10,
+                    transition_phase_matches INTEGER DEFAULT 20,
+                    top_n INTEGER DEFAULT 100,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tournament_questions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tournament_id INTEGER NOT NULL,
+                question_id INTEGER NOT NULL,
+                rating REAL NOT NULL,
+                matches INTEGER DEFAULT 0,
+                wins INTEGER DEFAULT 0
+            )
+        ''')
         conn.commit()
     print("Tables created")
 
@@ -125,3 +150,8 @@ def drop_tables():
         cursor.execute('''DROP TABLE IF EXISTS questions''')
         cursor.execute('''DROP TABLE IF EXISTS votes''')
         conn.commit()
+
+if __name__ == '__main__':
+    setup_database()
+    # drop_tables()
+    # clean_database()
