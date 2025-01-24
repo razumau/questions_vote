@@ -3,6 +3,8 @@ from typing import List, Tuple, Dict, Set
 import random
 import math
 
+from models import Tournament
+
 
 @dataclass
 class Item:
@@ -12,21 +14,15 @@ class Item:
     wins: int = 0
 
 
-class TournamentSystem:
-    def __init__(self, items: List[int],
-                 initial_k: float = 64.0,
-                 minimum_k: float = 16.0,
-                 std_dev_multiplier: float = 2.0,
-                 initial_phase_matches: int = 10,
-                 transition_phase_matches: int = 20,
-                 top_n: int = 100):
+class Elo:
+    def __init__(self, tournament: Tournament):
         self.items = {id: Item(id=id) for id in items}
-        self.initial_k = initial_k
-        self.minimum_k = minimum_k
-        self.std_dev_multiplier = std_dev_multiplier
-        self.initial_phase_matches = initial_phase_matches
-        self.transition_phase_matches = transition_phase_matches
-        self.top_n = top_n
+        self.initial_k = tournament.initial_k
+        self.minimum_k = tournament.minimum_k
+        self.std_dev_multiplier = tournament.std_dev_multiplier
+        self.initial_phase_matches = tournament.initial_phase_matches
+        self.transition_phase_matches = tournament.transition_phase_matches
+        self.top_n = tournament.top_n
         self.history: List[Tuple[int, int, int]] = []
         self.pairs_seen: Set[Tuple[int, int]] = set()
 
@@ -106,11 +102,11 @@ class TournamentSystem:
         winner.rating += rating_change
         loser.rating -= rating_change
 
-    def get_top_items(self, n: int = 100) -> List[Tuple[int, float, int]]:
+    def get_top_items(self, n: int = 100) -> List[Tuple[int, float, int, int]]:
         sorted_items = sorted(self.items.values(),
                               key=lambda x: (x.rating, x.wins / max(1, x.matches)),
                               reverse=True)
-        return [(item.id, item.rating, item.matches) for item in sorted_items[:n]]
+        return [(item.id, item.rating, item.matches, item.wins) for item in sorted_items[:n]]
 
     def calculate_threshold(self) -> float:
         qualified_items = [item for item in self.items.values() if item.matches >= self.initial_phase_matches]
