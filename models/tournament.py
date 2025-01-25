@@ -54,16 +54,19 @@ class Tournament:
         with connection() as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM tournaments WHERE state = 1')
+            cursor.execute("SELECT * FROM tournaments WHERE state = 1")
             rows = cursor.fetchall()
             if len(rows) != 1:
                 return None
 
             row = rows[0]
-            return cls(id=row['id'],
-                       initial_k=row['initial_k'],
-                       minimum_k=row['minimum_k'],
-                       std_dev_multiplier=row['std_dev_multiplier'],
-                       initial_phase_matches=row['initial_phase_matches'],
-                       transition_phase_matches=row['transition_phase_matches'],
-                       top_n=row['top_n'])
+            return cls(
+                id=row["id"],
+                initial_k=row["initial_k"],
+                minimum_k=row["minimum_k"],
+                std_dev_multiplier=row["std_dev_multiplier"],
+                initial_phase_matches=row["initial_phase_matches"],
+                transition_phase_matches=row["transition_phase_matches"],
+                top_n=row["top_n"],
+            )
+

@@ -4,16 +4,12 @@ import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 import sqlite3
-import random
 from typing import Tuple
 
-from db import connection, setup_database, DB_PATH
+from db import DB_PATH
 
 # Set up logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 
 
 class QuizVoteBot:
@@ -23,12 +19,12 @@ class QuizVoteBot:
     def get_random_questions(self) -> Tuple[Tuple[int, str], Tuple[int, str]]:
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute("""
                             SELECT id, question
                             FROM questions 
                             ORDER BY RANDOM() 
                             LIMIT 2
-                        ''')
+                        """)
 
             questions = cursor.fetchall()
             return tuple(questions)
@@ -37,10 +33,13 @@ class QuizVoteBot:
         """Save a user's vote to the database."""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO votes (user_id, question1_id, question2_id, selected_id)
                 VALUES (?, ?, ?, ?)
-            ''', (user_id, question1_id, question2_id, selected_id))
+            """,
+                (user_id, question1_id, question2_id, selected_id),
+            )
             conn.commit()
 
 
@@ -49,18 +48,16 @@ def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
     keyboard = [
         [
             InlineKeyboardButton("Question 1", callback_data=f"vote_{q1_id}_{q2_id}_1"),
-            InlineKeyboardButton("Question 2", callback_data=f"vote_{q1_id}_{q2_id}_2")
+            InlineKeyboardButton("Question 2", callback_data=f"vote_{q1_id}_{q2_id}_2"),
         ],
-        [InlineKeyboardButton("Neither", callback_data=f"vote_{q1_id}_{q2_id}_0")]
+        [InlineKeyboardButton("Neither", callback_data=f"vote_{q1_id}_{q2_id}_0")],
     ]
     return InlineKeyboardMarkup(keyboard)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Send a message when the command /start is issued."""
-    await update.message.reply_text(
-        "Welcome to the Quiz Vote Bot! Use /vote to get two random questions to compare."
-    )
+    await update.message.reply_text("Welcome to the Quiz Vote Bot! Use /vote to get two random questions to compare.")
 
 
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -68,11 +65,7 @@ async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     bot = QuizVoteBot(DB_PATH)
     q1, q2 = bot.get_random_questions()
 
-    message = (
-        f"Please vote for your preferred question:\n\n"
-        f"Question 1:\n{q1[1]}\n\n"
-        f"Question 2:\n{q2[1]}"
-    )
+    message = f"Please vote for your preferred question:\n\nQuestion 1:\n{q1[1]}\n\nQuestion 2:\n{q2[1]}"
 
     keyboard = create_vote_keyboard(q1[0], q2[0])
     await update.message.reply_text(message, reply_markup=keyboard)
@@ -84,7 +77,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     # Parse callback data
-    _, q1_id, q2_id, choice = query.data.split('_')
+    _, q1_id, q2_id, choice = query.data.split("_")
     choice = int(choice)
 
     # Save the vote
@@ -99,29 +92,20 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         response = "You voted for neither question."
 
-    bot.save_vote(
-        user_id=query.from_user.id,
-        question1_id=int(q1_id),
-        question2_id=int(q2_id),
-        selected_id=selected_id
-    )
+    bot.save_vote(user_id=query.from_user.id, question1_id=int(q1_id), question2_id=int(q2_id), selected_id=selected_id)
 
     # First, update the message with the vote result
     await query.edit_message_text(text=response)
 
     # Then send a new pair of questions
     q1, q2 = bot.get_random_questions()
-    message = (
-        f"Please vote for your preferred question:\n\n"
-        f"Question 1:\n{q1[1]}\n\n"
-        f"Question 2:\n{q2[1]}"
-    )
+    message = f"Please vote for your preferred question:\n\nQuestion 1:\n{q1[1]}\n\nQuestion 2:\n{q2[1]}"
     keyboard = create_vote_keyboard(q1[0], q2[0])
     await query.message.reply_text(message, reply_markup=keyboard)
 
 
 def main():
-    application = Application.builder().token(os.getenv('TELEGRAM_TOKEN')).build()
+    application = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("vote", vote_command))
@@ -130,5 +114,5 @@ def main():
     application.run_polling()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

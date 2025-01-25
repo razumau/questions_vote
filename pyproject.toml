@@ -10,4 +10,8 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "python-telegram-bot>=21.6",
     "requests>=2.32.3",
+    "ruff>=0.9.3",
 ]
+
+[tool.ruff]
+line-length = 120

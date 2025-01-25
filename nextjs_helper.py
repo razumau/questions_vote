@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 
 def extract_next_props(response: requests.Response) -> Optional[dict]:
     html_content = response.text
-    soup = BeautifulSoup(html_content, 'html.parser')
-    next_data_script = soup.find('script', id='__NEXT_DATA__')
+    soup = BeautifulSoup(html_content, "html.parser")
+    next_data_script = soup.find("script", id="__NEXT_DATA__")
 
     if next_data_script:
         try:

@@ -5,12 +5,13 @@ from models import Question
 from package_parser import PackageParser
 from utils import sleep_around
 
-DB_PATH = os.getenv('DB_PATH')
+DB_PATH = os.getenv("DB_PATH")
+
 
 def filter_by_year(year):
     with connection() as conn:
         cursor = conn.cursor()
-        cursor.execute('SELECT gotquestions_id, end_date FROM packages')
+        cursor.execute("SELECT gotquestions_id, end_date FROM packages")
         rows = cursor.fetchall()
         return [row for row in rows if row[1].year == year]
 

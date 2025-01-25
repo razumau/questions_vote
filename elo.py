@@ -43,14 +43,22 @@ class Elo:
     def _random_pair(self) -> Tuple[int, int]:
         while True:
             pair = tuple(random.sample(list(self.items.keys()), 2))
-            if pair not in self.pairs_seen and (pair[1], pair[0]) not in self.pairs_seen:
-                self.pairs_seen.add(pair)
-                return pair
+            # if pair not in self.pairs_seen and (pair[1], pair[0]) not in self.pairs_seen:
+            self.pairs_seen.add(pair)
+            return pair
+
+    def _rating_based_pair_new(self) -> Tuple[int, int]:
+        threshold = self.calculate_threshold()
+
+
 
     def _rating_based_pair(self) -> Tuple[int, int]:
         threshold = self.calculate_threshold()
-        viable_items = [item for item in self.items.values()
-                        if item.rating >= threshold or item.matches < self.initial_phase_matches]
+        viable_items = [
+            item
+            for item in self.items.values()
+            if item.rating >= threshold or item.matches < self.initial_phase_matches
+        ]
 
         if len(viable_items) < 2:
             return self._random_pair()
@@ -68,16 +76,16 @@ class Elo:
         selected_band.sort(key=lambda x: x.matches)
         item1 = selected_band[0]
 
-        candidates = [i for i in self.items.values()
-                      if i.id != item1.id
-                      and (i.id, item1.id) not in self.pairs_seen
-                      and (item1.id, i.id) not in self.pairs_seen]
+        candidates = [
+            i
+            for i in self.items.values()
+            if i.id != item1.id
+        ]
 
         if not candidates:
             return self._random_pair()
 
-        item2 = min(candidates,
-                    key=lambda x: abs(x.rating - item1.rating))
+        item2 = min(candidates, key=lambda x: abs(x.rating - item1.rating))
 
         self.pairs_seen.add((item1.id, item2.id))
         return item1.id, item2.id
@@ -103,15 +111,13 @@ class Elo:
         loser.rating -= rating_change
 
     def get_top_items(self, n: int = 100) -> List[Tuple[int, float, int, int]]:
-        sorted_items = sorted(self.items.values(),
-                              key=lambda x: (x.rating, x.wins / max(1, x.matches)),
-                              reverse=True)
+        sorted_items = sorted(self.items.values(), key=lambda x: (x.rating, x.wins / max(1, x.matches)), reverse=True)
         return [(item.id, item.rating, item.matches, item.wins) for item in sorted_items[:n]]
 
     def calculate_threshold(self) -> float:
         qualified_items = [item for item in self.items.values() if item.matches >= self.initial_phase_matches]
         if len(qualified_items) < self.top_n:
-            return float('-inf')
+            return float("-inf")
 
         sorted_items = sorted(qualified_items, key=lambda x: x.rating, reverse=True)
         top_n_threshold = sorted_items[min(self.top_n - 1, len(sorted_items) - 1)].rating
@@ -124,17 +130,13 @@ class Elo:
 
     def get_statistics(self) -> Dict:
         threshold = self.calculate_threshold()
-        viable_items = sum(1 for item in self.items.values()
-                           if item.rating >= threshold)
+        viable_items = sum(1 for item in self.items.values() if item.rating >= threshold)
 
         return {
-            'total_comparisons': len(self.history),
-            'items_compared': len(self.pairs_seen),
-            'average_matches_per_item': sum(i.matches for i in self.items.values()) / len(self.items),
-            'rating_range': (
-                min(i.rating for i in self.items.values()),
-                max(i.rating for i in self.items.values())
-            ),
-            'current_threshold': threshold,
-            'viable_items_count': viable_items
+            "total_comparisons": len(self.history),
+            "items_compared": len(self.pairs_seen),
+            "average_matches_per_item": sum(i.matches for i in self.items.values()) / len(self.items),
+            "rating_range": (min(i.rating for i in self.items.values()), max(i.rating for i in self.items.values())),
+            "current_threshold": threshold,
+            "viable_items_count": viable_items,
         }
