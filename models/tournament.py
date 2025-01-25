@@ -88,4 +88,3 @@ class Tournament:
                 questions_count=row["questions_count"],
                 band_size=row["band_size"],
             )
-

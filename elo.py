@@ -34,14 +34,15 @@ class Elo:
             return self.minimum_k
 
     def select_pair(self) -> Tuple[int, int]:
-        first = TournamentQuestion.get_random_question(tournament_id=self.tournament_id,
-                                                       min_rating=self.calculate_threshold())
-        print(f'{first=}')
+        first = TournamentQuestion.get_random_question(
+            tournament_id=self.tournament_id, min_rating=self.calculate_threshold()
+        )
         while True:
-            second = TournamentQuestion.get_random_question(tournament_id=self.tournament_id,
-                                                            min_rating=first.rating - self.band_size,
-                                                            max_rating=first.rating + self.band_size
-                                                            )
+            second = TournamentQuestion.get_random_question(
+                tournament_id=self.tournament_id,
+                min_rating=first.rating - self.band_size,
+                max_rating=first.rating + self.band_size,
+            )
             if second.question_id != first.question_id:
                 break
 

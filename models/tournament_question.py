@@ -6,6 +6,7 @@ from db import connection
 
 MAX_RATING = 1_000_000.0
 
+
 @dataclass
 class TournamentQuestion:
     tournament_id: int
@@ -27,10 +28,7 @@ class TournamentQuestion:
             conn.commit()
 
     @classmethod
-    def get_random_question(cls,
-                            tournament_id: int,
-                            min_rating: float = 0.0,
-                            max_rating: float = MAX_RATING):
+    def get_random_question(cls, tournament_id: int, min_rating: float = 0.0, max_rating: float = MAX_RATING):
         with connection() as conn:
             cursor = conn.cursor()
             questions_count = cursor.execute(
