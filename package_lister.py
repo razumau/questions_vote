@@ -1,5 +1,6 @@
 import requests
 
+from models import Package
 from nextjs_helper import extract_next_props
 from db import connection, setup_database, clean_database
 from utils import sleep_around

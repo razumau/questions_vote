@@ -1,7 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Dict, Set
-import random
-import math
+from typing import List, Tuple, Dict
 
 from models import Tournament, TournamentQuestion
 
