@@ -8,13 +8,14 @@ from models.tournament_question import TournamentQuestion
 @dataclass
 class Tournament:
     id: int
-    questions_count: int = 0
-    initial_k: float = 64.0
-    minimum_k: float = 16.0
-    std_dev_multiplier: float = 2.0
-    initial_phase_matches: int = 10
-    transition_phase_matches: int = 20
-    top_n: int = 100
+    questions_count: int
+    initial_k: float
+    minimum_k: float
+    std_dev_multiplier: float
+    initial_phase_matches: int
+    transition_phase_matches: int
+    top_n: int
+    band_size: int
 
     @classmethod
     def create_tournament(
@@ -57,13 +58,13 @@ class Tournament:
             conn.commit()
             tournament_id = cursor.lastrowid
 
-            cursor.executemany(
-                """
-                INSERT INTO tournament_questions (tournament_id, question_id, rating) VALUES (?, ?, ?)
-                """,
-                [(tournament_id, question_id, initial_rating) for question_id in question_ids],
-            )
-            conn.commit()
+            TournamentQuestion.create_tournament_questions(tournament_id, question_ids, initial_rating)
+
+    @classmethod
+    def start_tournament(cls, title):
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("UPDATE tournaments SET state = 1 WHERE title = ?", (title,))
 
     @classmethod
     def find_active_tournament(cls):
@@ -84,5 +85,7 @@ class Tournament:
                 initial_phase_matches=row["initial_phase_matches"],
                 transition_phase_matches=row["transition_phase_matches"],
                 top_n=row["top_n"],
+                questions_count=row["questions_count"],
+                band_size=row["band_size"],
             )
 
