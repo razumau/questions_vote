@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict, Set
 import random
 import math
 
-from models import Tournament
+from models import Tournament, TournamentQuestion
 
 
 @dataclass
@@ -16,16 +16,14 @@ class Item:
 
 class Elo:
     def __init__(self, tournament: Tournament):
-        self.items = {id: Item(id=id) for id in items}
+        self.tournament_id = tournament.id
         self.initial_k = tournament.initial_k
         self.minimum_k = tournament.minimum_k
         self.std_dev_multiplier = tournament.std_dev_multiplier
         self.initial_phase_matches = tournament.initial_phase_matches
         self.transition_phase_matches = tournament.transition_phase_matches
         self.top_n = tournament.top_n
-        self.band_size = 200
-        self.history: List[Tuple[int, int, int]] = []
-        self.pairs_seen: Set[Tuple[int, int]] = set()
+        self.band_size = tournament.band_size
 
     def _calculate_k_factor(self, item: Item) -> float:
         if item.matches < self.initial_phase_matches:
@@ -36,59 +34,18 @@ class Elo:
             return self.minimum_k
 
     def select_pair(self) -> Tuple[int, int]:
-        if len(self.history) < len(self.items) * 2:
-            return self._random_pair()
-        else:
-            return self._rating_based_pair()
-
-    def _random_pair(self) -> Tuple[int, int]:
+        first = TournamentQuestion.get_random_question(tournament_id=self.tournament_id,
+                                                       min_rating=self.calculate_threshold())
+        print(f'{first=}')
         while True:
-            pair = tuple(random.sample(list(self.items.keys()), 2))
-            # if pair not in self.pairs_seen and (pair[1], pair[0]) not in self.pairs_seen:
-            self.pairs_seen.add(pair)
-            return pair
+            second = TournamentQuestion.get_random_question(tournament_id=self.tournament_id,
+                                                            min_rating=first.rating - self.band_size,
+                                                            max_rating=first.rating + self.band_size
+                                                            )
+            if second.question_id != first.question_id:
+                break
 
-    def _rating_based_pair_new(self) -> Tuple[int, int]:
-        threshold = self.calculate_threshold()
-
-
-
-    def _rating_based_pair(self) -> Tuple[int, int]:
-        threshold = self.calculate_threshold()
-        viable_items = [
-            item
-            for item in self.items.values()
-            if item.rating >= threshold or item.matches < self.initial_phase_matches
-        ]
-
-        if len(viable_items) < 2:
-            return self._random_pair()
-
-        bands = {}
-        for item in viable_items:
-            band = math.floor(item.rating / self.band_size)
-            if band not in bands:
-                bands[band] = []
-            bands[band].append(item)
-
-        selected_band = max(bands.items(), key=lambda x: len(x[1]))[1]
-
-        selected_band.sort(key=lambda x: x.matches)
-        item1 = selected_band[0]
-
-        candidates = [
-            i
-            for i in self.items.values()
-            if i.id != item1.id
-        ]
-
-        if not candidates:
-            return self._random_pair()
-
-        item2 = min(candidates, key=lambda x: abs(x.rating - item1.rating))
-
-        self.pairs_seen.add((item1.id, item2.id))
-        return item1.id, item2.id
+        return first, second
 
     def record_winner(self, winner_id: int, loser_id: int, timestamp: int):
         self.history.append((winner_id, loser_id, timestamp))
@@ -115,7 +72,7 @@ class Elo:
         return [(item.id, item.rating, item.matches, item.wins) for item in sorted_items[:n]]
 
     def calculate_threshold(self) -> float:
-        qualified_items = [item for item in self.items.values() if item.matches >= self.initial_phase_matches]
+        qualified_items = TournamentQuestion.get_qualified_questions(self.tournament_id, self.initial_phase_matches)
         if len(qualified_items) < self.top_n:
             return float("-inf")
 
