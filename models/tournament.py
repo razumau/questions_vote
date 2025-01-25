@@ -2,11 +2,13 @@ import sqlite3
 from dataclasses import dataclass
 
 from db import connection
+from models.tournament_question import TournamentQuestion
 
 
 @dataclass
 class Tournament:
     id: int
+    questions_count: int = 0
     initial_k: float = 64.0
     minimum_k: float = 16.0
     std_dev_multiplier: float = 2.0
@@ -26,16 +28,30 @@ class Tournament:
         transition_phase_matches: int = 20,
         top_n: int = 100,
         initial_rating: float = 1500.0,
+        band_size: int = 200,
     ):
         with connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
                 """
                 INSERT INTO tournaments 
-                (title, initial_k, minimum_k, std_dev_multiplier, initial_phase_matches, transition_phase_matches, top_n)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (title, initial_k, minimum_k, std_dev_multiplier, 
+                    initial_phase_matches, transition_phase_matches, top_n, 
+                    questions_count, band_size
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (title, initial_k, minimum_k, std_dev_multiplier, initial_phase_matches, transition_phase_matches, top_n),
+                (
+                    title,
+                    initial_k,
+                    minimum_k,
+                    std_dev_multiplier,
+                    initial_phase_matches,
+                    transition_phase_matches,
+                    top_n,
+                    len(question_ids),
+                    band_size,
+                ),
             )
 
             conn.commit()

@@ -127,6 +127,7 @@ def setup_database():
                     transition_phase_matches INTEGER DEFAULT 20,
                     top_n INTEGER DEFAULT 100,
                     questions_count INTEGER NOT NULL,
+                    band_size INTEGER DEFAULT 200,
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )

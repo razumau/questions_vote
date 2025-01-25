@@ -23,6 +23,7 @@ class Elo:
         self.initial_phase_matches = tournament.initial_phase_matches
         self.transition_phase_matches = tournament.transition_phase_matches
         self.top_n = tournament.top_n
+        self.band_size = 200
         self.history: List[Tuple[int, int, int]] = []
         self.pairs_seen: Set[Tuple[int, int]] = set()
 
@@ -63,10 +64,9 @@ class Elo:
         if len(viable_items) < 2:
             return self._random_pair()
 
-        band_size = 200
         bands = {}
         for item in viable_items:
-            band = math.floor(item.rating / band_size)
+            band = math.floor(item.rating / self.band_size)
             if band not in bands:
                 bands[band] = []
             bands[band].append(item)
