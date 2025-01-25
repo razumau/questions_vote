@@ -49,9 +49,13 @@ sqlite3.register_converter("datetime", convert_datetime)
 sqlite3.register_converter("timestamp", convert_timestamp)
 
 
-def connection():
-    return sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+_connection = None
 
+def connection():
+    global _connection
+    if _connection is None:
+        _connection = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+    return _connection
 
 def setup_database():
     print("Creating tables if necessary...")
