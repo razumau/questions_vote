@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import List, Tuple, Dict
 
 from models import Tournament, TournamentQuestion
+
+_retries = 0
 
 
 @dataclass
@@ -23,7 +24,39 @@ class Elo:
         self.top_n = tournament.top_n
         self.band_size = tournament.band_size
 
-    def _calculate_k_factor(self, item: Item) -> float:
+    def _select_two_unqualified(self) -> tuple[int, int]:
+        first = TournamentQuestion.get_random_question(self.tournament_id, max_matches=self.initial_phase_matches - 1)
+        second = TournamentQuestion.get_random_question(self.tournament_id, max_matches=self.initial_phase_matches - 1)
+        return first.question_id, second.question_id
+
+    def _select_two_qualified(self) -> tuple[int, int]:
+        threshold = self.calculate_threshold()
+        first = TournamentQuestion.get_random_question(tournament_id=self.tournament_id, min_rating=threshold)
+        second = TournamentQuestion.get_random_question(tournament_id=self.tournament_id, min_rating=threshold)
+        return first.question_id, second.question_id
+
+    def select_pair(self) -> tuple[int, int]:
+        global _retries
+        unqualified_count = TournamentQuestion.count_unqualified_questions(
+            self.tournament_id, self.initial_phase_matches
+        )
+        if unqualified_count > 1:
+            first, second = self._select_two_unqualified()
+        elif unqualified_count == 1:
+            first = TournamentQuestion.get_random_question(
+                self.tournament_id, max_matches=self.initial_phase_matches - 1
+            )
+            second = TournamentQuestion.get_random_question(self.tournament_id)
+        else:
+            first, second = self._select_two_qualified()
+
+        if first == second:
+            _retries += 1
+            return self.select_pair()
+
+        return first, second
+
+    def _calculate_k_factor(self, item: TournamentQuestion) -> float:
         if item.matches < self.initial_phase_matches:
             return self.initial_k
         elif item.matches < self.transition_phase_matches:
@@ -31,26 +64,9 @@ class Elo:
         else:
             return self.minimum_k
 
-    def select_pair(self) -> Tuple[int, int]:
-        first = TournamentQuestion.get_random_question(
-            tournament_id=self.tournament_id, min_rating=self.calculate_threshold()
-        )
-        while True:
-            second = TournamentQuestion.get_random_question(
-                tournament_id=self.tournament_id,
-                min_rating=first.rating - self.band_size,
-                max_rating=first.rating + self.band_size,
-            )
-            if second.question_id != first.question_id:
-                break
-
-        return first, second
-
-    def record_winner(self, winner_id: int, loser_id: int, timestamp: int):
-        self.history.append((winner_id, loser_id, timestamp))
-
-        winner = self.items[winner_id]
-        loser = self.items[loser_id]
+    def record_winner(self, winner_id: int, loser_id: int) -> None:
+        winner = TournamentQuestion.find(self.tournament_id, winner_id)
+        loser = TournamentQuestion.find(self.tournament_id, loser_id)
 
         winner.matches += 1
         loser.matches += 1
@@ -66,33 +82,35 @@ class Elo:
         winner.rating += rating_change
         loser.rating -= rating_change
 
-    def get_top_items(self, n: int = 100) -> List[Tuple[int, float, int, int]]:
-        sorted_items = sorted(self.items.values(), key=lambda x: (x.rating, x.wins / max(1, x.matches)), reverse=True)
-        return [(item.id, item.rating, item.matches, item.wins) for item in sorted_items[:n]]
+        winner.save()
+        loser.save()
+
+    def get_top_items(self, n: int = 100) -> list:
+        return TournamentQuestion.get_top_questions(self.tournament_id, n)
 
     def calculate_threshold(self) -> float:
-        qualified_items = TournamentQuestion.get_qualified_questions(self.tournament_id, self.initial_phase_matches)
-        if len(qualified_items) < self.top_n:
+        ratings_count, std_dev = TournamentQuestion.get_stats_for_qualified(
+            self.tournament_id, self.initial_phase_matches
+        )
+        if ratings_count < self.top_n:
             return float("-inf")
 
-        sorted_items = sorted(qualified_items, key=lambda x: x.rating, reverse=True)
-        top_n_threshold = sorted_items[min(self.top_n - 1, len(sorted_items) - 1)].rating
-
-        ratings = [item.rating for item in qualified_items]
-        mean_rating = sum(ratings) / len(ratings)
-        std_dev = (sum((r - mean_rating) ** 2 for r in ratings) / len(ratings)) ** 0.5
-
+        top_n_threshold = TournamentQuestion.get_rating_at_position(self.tournament_id, self.top_n)
         return top_n_threshold - (self.std_dev_multiplier * std_dev)
 
-    def get_statistics(self) -> Dict:
+    def get_statistics(self) -> dict:
+        global _retries
         threshold = self.calculate_threshold()
-        viable_items = sum(1 for item in self.items.values() if item.rating >= threshold)
+        above_threshold_count = TournamentQuestion.count_questions_above_threshold(self.tournament_id, threshold)
+        rating_distribution = TournamentQuestion.get_rating_distribution(self.tournament_id)
+        unqualified_count = TournamentQuestion.count_unqualified_questions(
+            self.tournament_id, self.initial_phase_matches
+        )
 
         return {
-            "total_comparisons": len(self.history),
-            "items_compared": len(self.pairs_seen),
-            "average_matches_per_item": sum(i.matches for i in self.items.values()) / len(self.items),
-            "rating_range": (min(i.rating for i in self.items.values()), max(i.rating for i in self.items.values())),
             "current_threshold": threshold,
-            "viable_items_count": viable_items,
+            "above_threshold": above_threshold_count,
+            "unqualified": unqualified_count,
+            "distribution": rating_distribution,
+            "retries": _retries,
         }

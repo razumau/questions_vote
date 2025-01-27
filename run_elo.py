@@ -1,21 +1,13 @@
 import time
+import cProfile
+import pstats
 from elo import Elo
-from models import Tournament, Question
+from models import Tournament, Question, TournamentQuestion
 from db import setup_database
-from models.tournament_question import TournamentQuestion
-
-start = time.time()
-
-setup_database()
-
-question_ids = Question.question_ids_for_year(2022)
-print(len(question_ids))
-print(question_ids[0])
 
 
-#
 # Tournament.create_tournament(
-#     question_ids=question_ids,
+#     question_ids=Question.question_ids_for_year(2022),
 #     title="Test Tournament",
 #     initial_k=64.0,
 #     minimum_k=16.0,
@@ -26,25 +18,37 @@ print(question_ids[0])
 #     band_size=200
 # )
 
-Tournament.start_tournament("Test Tournament")
-t = Tournament.find_active_tournament()
-
-print(t)
-print(TournamentQuestion.get_random_question(tournament_id=t.id))
-
-ts = Elo(Tournament.find_active_tournament())
-
-print(ts.select_pair())
+# Tournament.start_tournament("Test Tournament")
 
 
-# for i in range(50000):
-#     a, b = ts.select_pair()
-#     ts.record_winner(winner_id=a, loser_id=b, timestamp=i)
-#     if i % 1000 == 0:
-#         print(f'{i}: {ts.get_statistics()['viable_items_count']}')
-#
-# for i, item in enumerate(ts.get_top_items(10000), 1):
-#     print(f'{i}. {item[0]}: {item[1]:.2f} ({item[2]} matches, {item[3]} wins)')
-# print(ts.get_statistics())
+def main():
+    start = time.time()
 
-print(time.time() - start)
+    setup_database()
+
+    t = Tournament.find_active_tournament()
+    ts = Elo(t)
+
+    print(TournamentQuestion.get_rating_distribution(t.id))
+
+    for i in range(1000):
+        a, b = ts.select_pair()
+        ts.record_winner(winner_id=a, loser_id=b)
+        if i % 100 == 0:
+            print(f"Pair {i}")
+            print(ts.get_statistics())
+
+    print(ts.get_statistics())
+
+    duration = time.time() - start
+    print(f"{duration:.2f} seconds")
+
+
+if __name__ == "__main__":
+    profiler = cProfile.Profile()
+    profiler.enable()
+    main()
+    profiler.disable()
+    profiler.dump_stats("profile_results.prof")
+    stats = pstats.Stats(profiler).sort_stats("cumtime")
+    stats.print_stats()

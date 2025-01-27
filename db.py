@@ -4,6 +4,8 @@ import datetime
 
 from dotenv import load_dotenv
 
+from std_dev import create_stddev_function
+
 load_dotenv()
 
 DB_PATH = os.getenv("DB_PATH")
@@ -51,11 +53,13 @@ sqlite3.register_converter("timestamp", convert_timestamp)
 
 _connection = None
 
+
 def connection():
     global _connection
     if _connection is None:
         _connection = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
     return _connection
+
 
 def setup_database():
     print("Creating tables if necessary...")
@@ -146,6 +150,8 @@ def setup_database():
                 wins INTEGER DEFAULT 0
             )
         """)
+
+        create_stddev_function(conn)
         conn.commit()
     print("Tables created")
 
