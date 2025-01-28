@@ -86,8 +86,10 @@ class Question:
             cursor.row_factory = sqlite3.Row
             cursor.execute(
                 f"""
-                SELECT id, question, handout_str FROM questions
-                WHERE id IN ({','.join('?' * len(ids))})
+                select q.id, q.question, q.handout_str, i.mime_type, i.data as image_data 
+                from questions q
+                left join images i on q.id = i.question_id
+                where q.id in ({','.join('?' * len(ids))})
             """,
                 ids,
             )

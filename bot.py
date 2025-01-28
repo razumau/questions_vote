@@ -46,6 +46,11 @@ def get_questions():
 
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q1, q2 = get_questions()
+    if q1['image_data']:
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q1['image_data'], caption='К вопросу 1')
+
+    if q2['image_data']:
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q2['image_data'], caption='К вопросу 2')
     message = f"Which question is better?\n\nQuestion 1:\n{q1['question']}\n\nQuestion 2:\n{q2['question']}"
     keyboard = create_vote_keyboard(q1['id'], q2['id'])
     await context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=keyboard)
