@@ -1,3 +1,4 @@
+import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime as dt
@@ -77,3 +78,17 @@ class Question:
                 (start_timestamp, end_timestamp),
             )
             return [row[0] for row in cursor.fetchall()]
+
+    @classmethod
+    def find(cls, ids: list[int]) -> list:
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.row_factory = sqlite3.Row
+            cursor.execute(
+                f"""
+                SELECT id, question, handout_str FROM questions
+                WHERE id IN ({','.join('?' * len(ids))})
+            """,
+                ids,
+            )
+            return cursor.fetchall()
