@@ -1,6 +1,4 @@
 import time
-import cProfile
-import pstats
 from elo import Elo
 from models import Tournament, Question, TournamentQuestion
 from db import setup_database
@@ -45,10 +43,5 @@ def main():
 
 
 if __name__ == "__main__":
-    profiler = cProfile.Profile()
-    profiler.enable()
     main()
-    profiler.disable()
-    profiler.dump_stats("profile_results.prof")
-    stats = pstats.Stats(profiler).sort_stats("cumtime")
-    stats.print_stats()
+
