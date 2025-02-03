@@ -106,6 +106,7 @@ class Elo:
         unqualified_count = TournamentQuestion.count_unqualified_questions(
             self.tournament_id, self.initial_phase_matches
         )
+        match_counts = TournamentQuestion.get_match_counts(self.tournament_id)
 
         return {
             "current_threshold": threshold,
@@ -113,4 +114,6 @@ class Elo:
             "unqualified": unqualified_count,
             "distribution": rating_distribution,
             "retries": _retries,
+            "total_matches": match_counts["matches"],
+            "total_wins": match_counts["wins"],
         }

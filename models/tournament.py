@@ -9,6 +9,7 @@ from models.tournament_question import TournamentQuestion
 class Tournament:
     id: int
     questions_count: int
+    title: str
     initial_k: float
     minimum_k: float
     std_dev_multiplier: float
@@ -67,6 +68,26 @@ class Tournament:
             cursor.execute("UPDATE tournaments SET state = 1 WHERE title = ?", (title,))
 
     @classmethod
+    def list_active_tournaments(cls):
+        with connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM tournaments WHERE state = 1")
+            rows = cursor.fetchall()
+            return [cls(
+                id=row["id"],
+                title=row["title"],
+                initial_k=row["initial_k"],
+                minimum_k=row["minimum_k"],
+                std_dev_multiplier=row["std_dev_multiplier"],
+                initial_phase_matches=row["initial_phase_matches"],
+                transition_phase_matches=row["transition_phase_matches"],
+                top_n=row["top_n"],
+                questions_count=row["questions_count"],
+                band_size=row["band_size"],
+            ) for row in rows]
+
+    @classmethod
     def find_active_tournament(cls):
         with connection() as conn:
             conn.row_factory = sqlite3.Row
@@ -74,11 +95,12 @@ class Tournament:
             cursor.execute("SELECT * FROM tournaments WHERE state = 1")
             rows = cursor.fetchall()
             if len(rows) != 1:
-                return None
+                raise ValueError("There should be exactly one active tournament")
 
             row = rows[0]
             return cls(
                 id=row["id"],
+                title=row["title"],
                 initial_k=row["initial_k"],
                 minimum_k=row["minimum_k"],
                 std_dev_multiplier=row["std_dev_multiplier"],

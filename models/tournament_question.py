@@ -178,6 +178,21 @@ class TournamentQuestion:
             ]
 
     @classmethod
+    def get_match_counts(cls, tournament_id: int):
+        with connection() as conn:
+            cursor = conn.cursor()
+            rows = cursor.execute(
+                """
+                select sum(matches), sum(wins)
+                from tournament_questions
+                where tournament_id = ?
+                """,
+                (tournament_id,),
+            ).fetchone()
+
+            return {"matches": rows[0], "wins": rows[1]}
+
+    @classmethod
     def find(cls, tournament_id: int, question_id: int) -> Optional["TournamentQuestion"]:
         with connection() as conn:
             cursor = conn.cursor()
