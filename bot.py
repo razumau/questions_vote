@@ -1,7 +1,9 @@
 import logging
 import os
+import textwrap
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
+from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 from db import connection, setup_database
@@ -27,10 +29,10 @@ def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: i
 def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
     keyboard = [
         [
-            InlineKeyboardButton("Question 1", callback_data=f"vote_{q1_id}_{q2_id}_1"),
-            InlineKeyboardButton("Question 2", callback_data=f"vote_{q1_id}_{q2_id}_2"),
+            InlineKeyboardButton("Первый", callback_data=f"vote_{q1_id}_{q2_id}_1"),
+            InlineKeyboardButton("Второй", callback_data=f"vote_{q1_id}_{q2_id}_2"),
         ],
-        [InlineKeyboardButton("Neither", callback_data=f"vote_{q1_id}_{q2_id}_0")],
+        [InlineKeyboardButton("Не могу выбрать", callback_data=f"vote_{q1_id}_{q2_id}_0")],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -38,22 +40,49 @@ def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Welcome to the Question Vote Bot! Use /vote to get two random questions to compare.")
 
-def get_questions():
+def format_question(question: Question, number: int) -> str:
+    handout = f"<b>Раздаточный материал</b>:\n{question.handout_str}\n\n" if question.handout_str else ""
+    accepted = f"<b>Зачёт</b>: {question.accepted_answer}\n" if question.accepted_answer else ""
+    formatted = f"""\
+    <b>Вопрос {number}.</b>
+    {handout}{question.question}
+    
+    <tg-spoiler>
+    <b>Ответ</b>: {question.answer}{accepted}
+    <b>Комментарий</b>: {question.comment}
+    <b>Источник</b>: {question.source}
+    </tg-spoiler>
+    """
+
+    return formatted.replace("\n    ", "\n")
+
+def get_questions() -> list[Question]:
     t = Tournament.find_active_tournament()
     ts = Elo(t)
     q1_id, q2_id = ts.select_pair()
     return Question.find([q1_id, q2_id])
 
+async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, text):
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=text,
+                                   link_preview_options=LinkPreviewOptions(is_disabled=True),
+                                   parse_mode=ParseMode.HTML)
+
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q1, q2 = get_questions()
-    if q1['image_data']:
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q1['image_data'], caption='К вопросу 1')
+    if q1.handout_img:
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q1.handout_img, caption='К вопросу 1')
 
-    if q2['image_data']:
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q2['image_data'], caption='К вопросу 2')
-    message = f"Which question is better?\n\nQuestion 1:\n{q1['question']}\n\nQuestion 2:\n{q2['question']}"
-    keyboard = create_vote_keyboard(q1['id'], q2['id'])
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=message, reply_markup=keyboard)
+    if q2.handout_img:
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q2.handout_img, caption='К вопросу 2')
+
+    q1_str = format_question(q1, number=1)
+    await send_question(update, context, q1_str)
+
+    q2_str = format_question(q2, number=2)
+    await send_question(update, context, q2_str)
+
+    keyboard = create_vote_keyboard(q1.id, q2.id)
+    await context.bot.send_message(chat_id=update.effective_chat.id, text="Какой вопрос лучше?", reply_markup=keyboard)
 
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):

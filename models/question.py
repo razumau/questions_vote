@@ -8,7 +8,6 @@ from db import connection
 
 @dataclass
 class Question:
-    got_questions_id: int
     question: str
     answer: str
     accepted_answer: str
@@ -16,10 +15,12 @@ class Question:
     source: str
     handout_str: str
     handout_img: str
-    author_id: Optional[int]
-    package_id: int
-    difficulty: float
-    is_incorrect: bool
+    got_questions_id: int = None
+    author_id: Optional[int] = None
+    package_id: Optional[int] = None
+    difficulty: Optional[float] = None
+    is_incorrect: bool = None
+    id: int = None
 
     @classmethod
     def build_question(cls, question_dict):
@@ -80,17 +81,27 @@ class Question:
             return [row[0] for row in cursor.fetchall()]
 
     @classmethod
-    def find(cls, ids: list[int]) -> list:
+    def find(cls, ids: list[int]) -> list["Question"]:
         with connection() as conn:
             cursor = conn.cursor()
             cursor.row_factory = sqlite3.Row
-            cursor.execute(
+            rows = cursor.execute(
                 f"""
-                select q.id, q.question, q.handout_str, i.mime_type, i.data as image_data 
+                select q.id, q.question, q.answer, q.comment, q.accepted_answer, q.handout_str, q.source, 
+                    i.mime_type, i.data as image_data 
                 from questions q
                 left join images i on q.id = i.question_id
                 where q.id in ({','.join('?' * len(ids))})
             """,
                 ids,
-            )
-            return cursor.fetchall()
+            ).fetchall()
+            return [cls(
+            id=row["id"],
+            question=row["question"],
+            answer=row["answer"],
+            accepted_answer=row["accepted_answer"],
+            comment=row["comment"],
+            handout_str=row["handout_str"],
+            handout_img=row["image_data"],
+            source=row["source"],
+        ) for row in rows]
