@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from db import connection
 from models.tournament_question import TournamentQuestion
 
+INITIAL_RATING = 1500.0
+
 
 @dataclass
 class Tournament:
@@ -29,7 +31,7 @@ class Tournament:
         initial_phase_matches: int = 10,
         transition_phase_matches: int = 20,
         top_n: int = 100,
-        initial_rating: float = 1500.0,
+        initial_rating: float = INITIAL_RATING,
         band_size: int = 200,
     ):
         with connection() as conn:
@@ -112,4 +114,14 @@ class Tournament:
                 top_n=row["top_n"],
                 questions_count=row["questions_count"],
                 band_size=row["band_size"],
+            )
+
+    def reset_tournament(self):
+        with connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """update tournament_questions set rating = ?, wins = 0, matches = 0 
+                   where tournament_id = ?
+               """,
+                (INITIAL_RATING, self.id),
             )

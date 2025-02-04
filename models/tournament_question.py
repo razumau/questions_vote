@@ -33,7 +33,6 @@ class TournamentQuestion:
         max_rating: float = 1_000_000.0,
         max_matches: int = 1_000_000,
     ) -> Optional["TournamentQuestion"]:
-        # print(f'getting random question with rating between {min_rating} and {max_rating}')
         with connection() as conn:
             cursor = conn.cursor()
             questions_count = cursor.execute(
