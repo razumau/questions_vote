@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import os
 import datetime
@@ -5,6 +6,8 @@ import datetime
 from dotenv import load_dotenv
 
 from db.std_dev import create_stddev_function
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -62,7 +65,7 @@ def connection():
 
 
 def setup_database():
-    print("Creating tables if necessary...")
+    logger.info("Creating tables if necessary...")
     with connection() as conn:
         cursor = conn.cursor()
 
@@ -154,7 +157,7 @@ def setup_database():
 
         create_stddev_function(conn)
         conn.commit()
-    print("Tables created")
+    logger.info("Tables created")
 
 
 def clean_database():

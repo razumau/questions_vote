@@ -14,7 +14,7 @@ from models import Tournament, Question, Vote
 from rate_limiter import RateLimiter
 
 
-logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.WARN)
 
 
 @lru_cache(maxsize=1)
