@@ -1,3 +1,6 @@
+# Initial version copied from this example:
+# https://github.com/astral-sh/uv-docker-example/blob/1c593aa32621eacd0125b55bd8d2796b86e8ea73/Dockerfile
+
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
