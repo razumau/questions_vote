@@ -138,7 +138,7 @@ async def send_vote_job(context: ContextTypes.DEFAULT_TYPE):
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     when = RateLimiter().can_send_in_seconds(chat_id)
-    context.job_queue.run_once(send_vote_job, when=when, chat_id=chat_id)
+    context.job_queue.run_once(send_vote_job, when=when, chat_id=chat_id, job_kwargs={"misfire_grace_time": None})
 
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
