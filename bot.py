@@ -1,6 +1,7 @@
 import logging
 import os
 import textwrap
+from functools import lru_cache
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
 from telegram.constants import ParseMode
@@ -10,8 +11,19 @@ from db import connection, setup_database
 from elo import Elo
 from models import Tournament, Question
 
-# Set up logging
+
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+
+
+@lru_cache(maxsize=1)
+def elo():
+    t = Tournament.find_active_tournament()
+    return Elo(t)
+
+
+def get_questions() -> list[Question]:
+    q1_id, q2_id = elo().select_pair()
+    return Question.find([q1_id, q2_id])
 
 
 def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: int = None):
@@ -25,6 +37,12 @@ def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: i
             (user_id, question1_id, question2_id, selected_id),
         )
         conn.commit()
+        if selected_id is None:
+            return
+
+        loser_id = question1_id if selected_id == question2_id else question2_id
+        elo().record_winner(winner_id=selected_id, loser_id=loser_id)
+
 
 def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
     keyboard = [
@@ -38,15 +56,18 @@ def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Welcome to the Question Vote Bot! Use /vote to get two random questions to compare.")
+    await update.message.reply_text(
+        "Welcome to the Question Vote Bot! Use /vote to get two random questions to compare."
+    )
+
 
 def format_question(question: Question, number: int) -> str:
     handout = f"<b>Раздаточный материал</b>:\n{question.handout_str}\n\n" if question.handout_str else ""
-    accepted = f"<b>Зачёт</b>: {question.accepted_answer}\n" if question.accepted_answer else ""
+    accepted = f"\n<b>Зачёт</b>: {question.accepted_answer}" if question.accepted_answer else ""
+
     formatted = f"""\
     <b>Вопрос {number}.</b>
     {handout}{question.question}
-    
     <tg-spoiler>
     <b>Ответ</b>: {question.answer}{accepted}
     <b>Комментарий</b>: {question.comment}
@@ -56,30 +77,38 @@ def format_question(question: Question, number: int) -> str:
 
     return formatted.replace("\n    ", "\n")
 
-def get_questions() -> list[Question]:
-    t = Tournament.find_active_tournament()
-    ts = Elo(t)
-    q1_id, q2_id = ts.select_pair()
-    return Question.find([q1_id, q2_id])
 
-async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, text):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=text,
-                                   link_preview_options=LinkPreviewOptions(is_disabled=True),
-                                   parse_mode=ParseMode.HTML)
+def build_questions_stats_message(q1_id: int, q2_id: int) -> str:
+    questions_stats = elo().get_questions_stats(q1_id, q2_id)
+    first_wins, first_matches = questions_stats[0]["wins"], questions_stats[0]["matches"]
+    second_wins, second_matches = questions_stats[1]["wins"], questions_stats[1]["matches"]
+    first_pct = round(first_wins / first_matches * 100, 2) if first_matches else 0
+    second_pct = round(second_wins / second_matches * 100, 2) if second_matches else 0
+
+    return (
+        f"У первого вопроса теперь {first_wins} побед в {first_matches} сравнениях ({first_pct}%), "
+        f"а у второго — {second_wins} побед в {second_matches} сравнениях ({second_pct}%)."
+    )
+
+
+async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, question: Question, number: int):
+    if question.handout_img:
+        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=question.handout_img)
+
+    question_text = format_question(question, number)
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=question_text,
+        link_preview_options=LinkPreviewOptions(is_disabled=True),
+        parse_mode=ParseMode.HTML,
+    )
+
 
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q1, q2 = get_questions()
-    if q1.handout_img:
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q1.handout_img, caption='К вопросу 1')
 
-    if q2.handout_img:
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=q2.handout_img, caption='К вопросу 2')
-
-    q1_str = format_question(q1, number=1)
-    await send_question(update, context, q1_str)
-
-    q2_str = format_question(q2, number=2)
-    await send_question(update, context, q2_str)
+    await send_question(update, context, q1, 1)
+    await send_question(update, context, q2, 2)
 
     keyboard = create_vote_keyboard(q1.id, q2.id)
     await context.bot.send_message(chat_id=update.effective_chat.id, text="Какой вопрос лучше?", reply_markup=keyboard)
@@ -90,21 +119,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
 
     _, q1_id, q2_id, choice = query.data.split("_")
-    choice = int(choice)
+    q1_id, q2_id, choice = int(q1_id), int(q2_id), int(choice)
+    selected_id = q1_id if choice == 1 else q2_id if choice == 2 else None
 
-    selected_id = None
-    if choice == 1:
-        selected_id = int(q1_id)
-        response = "You voted for Question 1!"
-    elif choice == 2:
-        selected_id = int(q2_id)
-        response = "You voted for Question 2!"
-    else:
-        response = "You voted for neither question."
+    save_vote(user_id=query.from_user.id, question1_id=q1_id, question2_id=q2_id, selected_id=selected_id)
 
-    save_vote(user_id=query.from_user.id, question1_id=int(q1_id), question2_id=int(q2_id), selected_id=selected_id)
+    response = build_questions_stats_message(q1_id, q2_id)
 
-    await query.edit_message_text(text=response)
+    await query.edit_message_text(text=textwrap.dedent(response))
     await vote_command(update, context)
 
 

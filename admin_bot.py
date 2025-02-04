@@ -14,18 +14,20 @@ async def list_active_tournaments(update: Update, context: ContextTypes.DEFAULT_
     message = f"Active tournaments: \n{tournaments_str}"
     await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
 
+
 async def stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     t = Tournament.find_active_tournament()
     elo = Elo(t)
     stats = elo.get_statistics()
     message = f"""
-        Threshold: {stats['current_threshold']}.
-        There are {stats['above_threshold']} questions above the threshold.
-        {stats['unqualified']} questions are unqualified.
-        Rating distribution: {stats['distribution']}. 
-        Total matches: {stats['total_matches']}, total wins: {stats['total_wins']}.
+        Threshold: {stats["current_threshold"]}.
+        There are {stats["above_threshold"]} questions above the threshold.
+        {stats["unqualified"]} questions are unqualified.
+        Rating distribution: {stats["distribution"]}. 
+        Total matches: {stats["total_matches"]}, total wins: {stats["total_wins"]}.
     """
     await context.bot.send_message(chat_id=update.effective_chat.id, text=message)
+
 
 def main():
     setup_database()

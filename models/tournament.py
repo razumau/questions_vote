@@ -74,18 +74,21 @@ class Tournament:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM tournaments WHERE state = 1")
             rows = cursor.fetchall()
-            return [cls(
-                id=row["id"],
-                title=row["title"],
-                initial_k=row["initial_k"],
-                minimum_k=row["minimum_k"],
-                std_dev_multiplier=row["std_dev_multiplier"],
-                initial_phase_matches=row["initial_phase_matches"],
-                transition_phase_matches=row["transition_phase_matches"],
-                top_n=row["top_n"],
-                questions_count=row["questions_count"],
-                band_size=row["band_size"],
-            ) for row in rows]
+            return [
+                cls(
+                    id=row["id"],
+                    title=row["title"],
+                    initial_k=row["initial_k"],
+                    minimum_k=row["minimum_k"],
+                    std_dev_multiplier=row["std_dev_multiplier"],
+                    initial_phase_matches=row["initial_phase_matches"],
+                    transition_phase_matches=row["transition_phase_matches"],
+                    top_n=row["top_n"],
+                    questions_count=row["questions_count"],
+                    band_size=row["band_size"],
+                )
+                for row in rows
+            ]
 
     @classmethod
     def find_active_tournament(cls):

@@ -101,6 +101,7 @@ def setup_database():
             CREATE TABLE IF NOT EXISTS votes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
+                tournament_id INTEGER NOT NULL,
                 question1_id INTEGER NOT NULL,
                 question2_id INTEGER NOT NULL,
                 selected_id INTEGER,

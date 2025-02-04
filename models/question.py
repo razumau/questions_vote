@@ -91,17 +91,20 @@ class Question:
                     i.mime_type, i.data as image_data 
                 from questions q
                 left join images i on q.id = i.question_id
-                where q.id in ({','.join('?' * len(ids))})
+                where q.id in ({",".join("?" * len(ids))})
             """,
                 ids,
             ).fetchall()
-            return [cls(
-            id=row["id"],
-            question=row["question"],
-            answer=row["answer"],
-            accepted_answer=row["accepted_answer"],
-            comment=row["comment"],
-            handout_str=row["handout_str"],
-            handout_img=row["image_data"],
-            source=row["source"],
-        ) for row in rows]
+            return [
+                cls(
+                    id=row["id"],
+                    question=row["question"],
+                    answer=row["answer"],
+                    accepted_answer=row["accepted_answer"],
+                    comment=row["comment"],
+                    handout_str=row["handout_str"],
+                    handout_img=row["image_data"],
+                    source=row["source"],
+                )
+                for row in rows
+            ]

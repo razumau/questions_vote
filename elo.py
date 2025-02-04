@@ -98,6 +98,11 @@ class Elo:
         top_n_threshold = TournamentQuestion.get_rating_at_position(self.tournament_id, self.top_n)
         return top_n_threshold - (self.std_dev_multiplier * std_dev)
 
+    def get_questions_stats(self, q1_id: int, q2_id: int) -> list[dict]:
+        q1 = TournamentQuestion.find(self.tournament_id, q1_id)
+        q2 = TournamentQuestion.find(self.tournament_id, q2_id)
+        return [{"matches": q1.matches, "wins": q1.wins}, {"matches": q2.matches, "wins": q2.wins}]
+
     def get_statistics(self) -> dict:
         global _retries
         threshold = self.calculate_threshold()
