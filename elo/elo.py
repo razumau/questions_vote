@@ -1,16 +1,6 @@
-from dataclasses import dataclass
-
 from models import Tournament, TournamentQuestion
 
 _retries = 0
-
-
-@dataclass
-class Item:
-    id: int
-    rating: float = 1500.0
-    matches: int = 0
-    wins: int = 0
 
 
 class Elo:

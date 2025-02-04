@@ -1,6 +1,6 @@
 import time
 from elo import Elo
-from models import Tournament, Question, TournamentQuestion
+from models import Tournament, TournamentQuestion
 from db import setup_database
 
 

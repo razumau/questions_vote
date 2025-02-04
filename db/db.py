@@ -4,7 +4,7 @@ import datetime
 
 from dotenv import load_dotenv
 
-from std_dev import create_stddev_function
+from db.std_dev import create_stddev_function
 
 load_dotenv()
 

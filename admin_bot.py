@@ -1,9 +1,9 @@
 import os
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-from db import connection, setup_database
+from db import setup_database
 from elo import Elo
 from models import Tournament
 
