@@ -1,0 +1,2 @@
+#!/bin/bash
+IPYTHONDIR=./ipython_profiles uv run ipython --profile=main

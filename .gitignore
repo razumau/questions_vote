@@ -19,3 +19,4 @@ list.json
 
 questions.db
 *.prof
+ipython_profiles/profile_main/history.sqlite
