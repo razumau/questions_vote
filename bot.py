@@ -2,14 +2,15 @@ import logging
 import os
 import textwrap
 from functools import lru_cache
+from typing import Optional
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LinkPreviewOptions
 from telegram.constants import ParseMode
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-from db import connection, setup_database
+from db import setup_database
 from elo import Elo
-from models import Tournament, Question
+from models import Tournament, Question, Vote
 from rate_limiter import RateLimiter
 
 
@@ -27,22 +28,13 @@ def get_questions() -> list[Question]:
     return Question.find([q1_id, q2_id])
 
 
-def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: int = None):
-    with connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO votes (user_id, question1_id, question2_id, selected_id)
-            VALUES (?, ?, ?, ?)
-        """,
-            (user_id, question1_id, question2_id, selected_id),
-        )
-        conn.commit()
-        if selected_id is None:
-            return
+def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: Optional[int]):
+    Vote.create(user_id, question1_id, question2_id, elo().tournament_id, selected_id)
+    if selected_id is None:
+        return
 
-        loser_id = question1_id if selected_id == question2_id else question2_id
-        elo().record_winner(winner_id=selected_id, loser_id=loser_id)
+    loser_id = question1_id if selected_id == question2_id else question2_id
+    elo().record_winner(winner_id=selected_id, loser_id=loser_id)
 
 
 def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
