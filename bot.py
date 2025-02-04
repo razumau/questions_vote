@@ -10,6 +10,7 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 from db import connection, setup_database
 from elo import Elo
 from models import Tournament, Question
+from rate_limiter import RateLimiter
 
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -91,27 +92,35 @@ def build_questions_stats_message(q1_id: int, q2_id: int) -> str:
     )
 
 
-async def send_question(update: Update, context: ContextTypes.DEFAULT_TYPE, question: Question, number: int):
+async def send_question(chat_id: int, context: ContextTypes.DEFAULT_TYPE, question: Question, number: int):
     if question.handout_img:
-        await context.bot.send_photo(chat_id=update.effective_chat.id, photo=question.handout_img)
+        await context.bot.send_photo(chat_id=chat_id, photo=question.handout_img)
 
     question_text = format_question(question, number)
     await context.bot.send_message(
-        chat_id=update.effective_chat.id,
+        chat_id=chat_id,
         text=question_text,
         link_preview_options=LinkPreviewOptions(is_disabled=True),
         parse_mode=ParseMode.HTML,
     )
 
 
-async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_vote_job(context: ContextTypes.DEFAULT_TYPE):
+    chat_id = context.job.chat_id
     q1, q2 = get_questions()
 
-    await send_question(update, context, q1, 1)
-    await send_question(update, context, q2, 2)
+    await send_question(chat_id, context, q1, 1)
+    await send_question(chat_id, context, q2, 2)
 
     keyboard = create_vote_keyboard(q1.id, q2.id)
-    await context.bot.send_message(chat_id=update.effective_chat.id, text="Какой вопрос лучше?", reply_markup=keyboard)
+    RateLimiter().record(chat_id)
+    await context.bot.send_message(chat_id=chat_id, text="Какой вопрос лучше?", reply_markup=keyboard)
+
+
+async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat_id = update.effective_chat.id
+    when = RateLimiter().can_send_in_seconds(chat_id)
+    context.job_queue.run_once(send_vote_job, when=when, chat_id=chat_id)
 
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
