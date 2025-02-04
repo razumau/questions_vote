@@ -71,16 +71,42 @@ def format_question(question: Question, number: int) -> str:
     return formatted.replace("\n    ", "\n")
 
 
-def build_questions_stats_message(q1_id: int, q2_id: int) -> str:
+def confirmation_message(q1_id: int, q2_id: int, selected_id: int) -> str:
+    if selected_id == q1_id:
+        return "Записали, что первый вопрос лучше."
+    elif selected_id == q2_id:
+        return "Записали, что второй вопрос лучше."
+    else:
+        return "Ничего не изменилось для этих вопросов."
+
+
+def inflect_wins(number: int) -> str:
+    if 11 <= number % 100 <= 19:
+        wins_word = "побед"
+    elif number % 10 == 1:
+        wins_word = "победа"
+    elif 2 <= number % 10 <= 4:
+        wins_word = "победы"
+    else:
+        wins_word = "побед"
+    return f"{number} {wins_word}"
+
+
+def inflect_comparisons(number: int) -> str:
+    comparisons_word = "матчах" if number > 1 else "матче"
+    return f"{number} {comparisons_word}"
+
+
+def questions_stats_message(q1_id: int, q2_id: int) -> str:
     questions_stats = elo().get_questions_stats(q1_id, q2_id)
     first_wins, first_matches = questions_stats[0]["wins"], questions_stats[0]["matches"]
     second_wins, second_matches = questions_stats[1]["wins"], questions_stats[1]["matches"]
-    first_pct = round(first_wins / first_matches * 100, 2) if first_matches else 0
-    second_pct = round(second_wins / second_matches * 100, 2) if second_matches else 0
+    first_pct = round(first_wins / first_matches * 100, 1) if first_matches else 0
+    second_pct = round(second_wins / second_matches * 100, 1) if second_matches else 0
 
     return (
-        f"У первого вопроса теперь {first_wins} побед в {first_matches} сравнениях ({first_pct}%), "
-        f"а у второго — {second_wins} побед в {second_matches} сравнениях ({second_pct}%)."
+        f"У первого теперь {inflect_wins(first_wins)} в {inflect_comparisons(first_matches)} ({first_pct}%), "
+        f"а у второго — {inflect_wins(second_wins)} в {inflect_comparisons(second_matches)} ({second_pct}%)."
     )
 
 
@@ -125,7 +151,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     save_vote(user_id=query.from_user.id, question1_id=q1_id, question2_id=q2_id, selected_id=selected_id)
 
-    response = build_questions_stats_message(q1_id, q2_id)
+    response = f"{confirmation_message(q1_id, q2_id, selected_id)} {questions_stats_message(q1_id, q2_id)}"
 
     await query.edit_message_text(text=textwrap.dedent(response))
     await vote_command(update, context)
