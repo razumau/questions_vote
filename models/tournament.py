@@ -100,7 +100,7 @@ class Tournament:
             cursor.execute("SELECT * FROM tournaments WHERE state = 1")
             rows = cursor.fetchall()
             if len(rows) != 1:
-                raise ValueError("There should be exactly one active tournament")
+                raise ValueError(f"There should be exactly one active tournament, not {len(rows)}")
 
             row = rows[0]
             return cls(
