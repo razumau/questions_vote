@@ -34,6 +34,10 @@ COPY litestream.yml /etc/litestream.yml
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
+RUN export SENTRY_RELEASE=$(git rev-parse HEAD) && \
+    echo "SENTRY_RELEASE=$SENTRY_RELEASE" >> /etc/environment
+
+
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
