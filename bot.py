@@ -179,9 +179,9 @@ def main():
     setup_database()
     application = Application.builder().token(os.getenv("TELEGRAM_TOKEN")).build()
 
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("vote", vote_command))
-    application.add_handler(CallbackQueryHandler(button_callback))
+    application.add_handler(CommandHandler("start", start, block=False))
+    application.add_handler(CommandHandler("vote", vote_command, block=False))
+    application.add_handler(CallbackQueryHandler(button_callback, block=False))
 
     application.run_polling()
 
