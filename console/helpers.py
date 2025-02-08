@@ -14,10 +14,11 @@ def create_tournament_for_year(year: int):
         initial_phase_matches=5,
         transition_phase_matches=10,
         top_n=100,
-        band_size=200
+        band_size=200,
     )
 
     Tournament.start_tournament(title)
+
 
 def active_elo():
     return Elo(Tournament.find_active_tournament())

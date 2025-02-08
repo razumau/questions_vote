@@ -76,6 +76,7 @@ def set_pragmas():
         cursor.execute("PRAGMA cache_size = 2000")
         cursor.execute("PRAGMA busy_timeout = 5000")
 
+
 def create_tables():
     logger.info("Creating tables if necessary...")
     with connection() as conn:
