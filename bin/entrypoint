@@ -1,0 +1,5 @@
+#!/bin/sh
+
+litestream restore -o /app/questions.db /app/questions.db
+echo "Restored database from backup"
+litestream replicate

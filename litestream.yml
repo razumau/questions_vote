@@ -1,0 +1,13 @@
+access-key-id: ${AWS_ACCESS_KEY_ID}
+secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+exec: python /app/bot.py
+logging:
+  level: info
+  type: text
+  stderr: false
+dbs:
+  - path: /app/questions.db
+    replicas:
+      - type: s3
+        endpoint: ${AWS_ENDPOINT_URL_S3}
+        bucket: ${BUCKET_NAME}
