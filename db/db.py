@@ -61,10 +61,22 @@ def connection():
     global _connection
     if _connection is None:
         _connection = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
+        set_pragmas()
     return _connection
 
 
-def setup_database():
+def set_pragmas():
+    with connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA journal_mode = WAL")
+        cursor.execute("PRAGMA synchronous = NORMAL")
+        cursor.execute("PRAGMA busy_timeout = 5000")
+        cursor.execute("PRAGMA journal_size_limit = 67108864")
+        cursor.execute("PRAGMA mmap_size = 134217728")
+        cursor.execute("PRAGMA cache_size = 2000")
+        cursor.execute("PRAGMA busy_timeout = 5000")
+
+def create_tables():
     logger.info("Creating tables if necessary...")
     with connection() as conn:
         cursor = conn.cursor()
@@ -155,9 +167,14 @@ def setup_database():
             )
         """)
 
-        create_stddev_function(conn)
         conn.commit()
     logger.info("Tables created")
+
+
+def setup_database():
+    set_pragmas()
+    create_tables()
+    create_stddev_function(connection())
 
 
 def clean_database():
@@ -178,9 +195,3 @@ def drop_tables():
         cursor.execute("""DROP TABLE IF EXISTS questions""")
         cursor.execute("""DROP TABLE IF EXISTS votes""")
         conn.commit()
-
-
-if __name__ == "__main__":
-    setup_database()
-    # drop_tables()
-    # clean_database()
