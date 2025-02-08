@@ -101,9 +101,14 @@ def inflect_wins(number: int) -> str:
     return f"{number} {wins_word}"
 
 
-def inflect_comparisons(number: int) -> str:
-    comparisons_word = "матчах" if number > 1 else "матче"
-    return f"{number} {comparisons_word}"
+def inflect_matches(number: int) -> str:
+    if number == 1:
+        matches_word = "матче"
+    elif number == 0:
+        matches_word = "матчей"
+    else:
+        matches_word = "матчах"
+    return f"{number} {matches_word}"
 
 
 def questions_stats_message(q1_id: int, q2_id: int) -> str:
@@ -114,8 +119,8 @@ def questions_stats_message(q1_id: int, q2_id: int) -> str:
     second_pct = round(second_wins / second_matches * 100, 1) if second_matches else 0
 
     return (
-        f"У первого теперь {inflect_wins(first_wins)} в {inflect_comparisons(first_matches)} ({first_pct}%), "
-        f"а у второго — {inflect_wins(second_wins)} в {inflect_comparisons(second_matches)} ({second_pct}%)."
+        f"У первого теперь {inflect_wins(first_wins)} в {inflect_matches(first_matches)} ({first_pct}%), "
+        f"а у второго — {inflect_wins(second_wins)} в {inflect_matches(second_matches)} ({second_pct}%)."
     )
 
 
