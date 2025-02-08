@@ -1,6 +1,10 @@
 from elo import Elo
 from models import Tournament, Question
 
+from db import setup_database
+
+setup_database()
+
 
 def create_tournament_for_year(year: int):
     title = f"All {year} questions"
