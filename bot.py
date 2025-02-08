@@ -37,6 +37,7 @@ def get_questions() -> list[Question]:
     return Question.find([q1_id, q2_id])
 
 
+@sentry_sdk.trace
 def save_vote(user_id: int, question1_id: int, question2_id: int, selected_id: Optional[int]):
     Vote.create(user_id, question1_id, question2_id, elo().tournament_id, selected_id)
     if selected_id is None:
@@ -111,6 +112,7 @@ def inflect_matches(number: int) -> str:
     return f"{number} {matches_word}"
 
 
+@sentry_sdk.trace
 def questions_stats_message(q1_id: int, q2_id: int) -> str:
     questions_stats = elo().get_questions_stats(q1_id, q2_id)
     first_wins, first_matches = questions_stats[0]["wins"], questions_stats[0]["matches"]
@@ -124,6 +126,7 @@ def questions_stats_message(q1_id: int, q2_id: int) -> str:
     )
 
 
+@sentry_sdk.trace
 async def send_question(chat_id: int, context: ContextTypes.DEFAULT_TYPE, question: Question, number: int):
     if question.handout_img:
         await context.bot.send_photo(chat_id=chat_id, photo=question.handout_img)
@@ -138,15 +141,16 @@ async def send_question(chat_id: int, context: ContextTypes.DEFAULT_TYPE, questi
 
 
 async def send_vote_job(context: ContextTypes.DEFAULT_TYPE):
-    chat_id = context.job.chat_id
-    q1, q2 = get_questions()
+    with sentry_sdk.start_transaction(op="task", name="Send vote"):
+        chat_id = context.job.chat_id
+        q1, q2 = get_questions()
 
-    await send_question(chat_id, context, q1, 1)
-    await send_question(chat_id, context, q2, 2)
+        await send_question(chat_id, context, q1, 1)
+        await send_question(chat_id, context, q2, 2)
 
-    keyboard = create_vote_keyboard(q1.id, q2.id)
-    RateLimiter().record(chat_id)
-    await context.bot.send_message(chat_id=chat_id, text="Какой вопрос лучше?", reply_markup=keyboard)
+        keyboard = create_vote_keyboard(q1.id, q2.id)
+        RateLimiter().record(chat_id)
+        await context.bot.send_message(chat_id=chat_id, text="Какой вопрос лучше?", reply_markup=keyboard)
 
 
 async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -156,17 +160,17 @@ async def vote_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+    with sentry_sdk.start_transaction(op="task", name="Record vote"):
+        query = update.callback_query
+        await query.answer()
 
-    _, q1_id, q2_id, choice = query.data.split("_")
-    q1_id, q2_id, choice = int(q1_id), int(q2_id), int(choice)
-    selected_id = q1_id if choice == 1 else q2_id if choice == 2 else None
+        _, q1_id, q2_id, choice = query.data.split("_")
+        q1_id, q2_id, choice = int(q1_id), int(q2_id), int(choice)
+        selected_id = q1_id if choice == 1 else q2_id if choice == 2 else None
 
-    save_vote(user_id=query.from_user.id, question1_id=q1_id, question2_id=q2_id, selected_id=selected_id)
+        save_vote(user_id=query.from_user.id, question1_id=q1_id, question2_id=q2_id, selected_id=selected_id)
 
     response = f"{confirmation_message(q1_id, q2_id, selected_id)} {questions_stats_message(q1_id, q2_id)}"
-
     await query.edit_message_text(text=textwrap.dedent(response))
     await vote_command(update, context)
 
