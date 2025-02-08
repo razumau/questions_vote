@@ -9,11 +9,8 @@ DB_PATH = os.getenv("DB_PATH")
 
 
 def filter_by_year(year):
-    with connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT gotquestions_id, end_date FROM packages")
-        rows = cursor.fetchall()
-        return [row for row in rows if row[1].year == year]
+    rows = connection().execute("SELECT gotquestions_id, end_date FROM packages").fetchall()
+    return [row for row in rows if row[1].year == year]
 
 
 packages_for_year = filter_by_year(2020)

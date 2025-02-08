@@ -33,27 +33,22 @@ class PackageLister:
             self.insert_package(package)
 
     def insert_package(self, package: Package):
-        with connection() as conn:
-            cursor = conn.cursor()
-            if self.package_exists(package.gotquestions_id):
-                return
-            cursor.execute(
-                """
-                INSERT INTO packages (
-                    gotquestions_id, title, start_date, end_date, questions_count
-                ) VALUES (?, ?, ?, ?, ?)
-            """,
-                (package.gotquestions_id, package.title, package.start_date, package.end_date, package.questions_count),
-            )
-            conn.commit()
+        if self.package_exists(package.gotquestions_id):
+            return
+
+        connection().execute(
+            """
+            INSERT INTO packages (
+                gotquestions_id, title, start_date, end_date, questions_count
+            ) VALUES (?, ?, ?, ?, ?)
+        """,
+            (package.gotquestions_id, package.title, package.start_date, package.end_date, package.questions_count),
+        )
 
     @staticmethod
     def package_exists(package_id) -> bool:
-        with connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM packages WHERE gotquestions_id = ?", (package_id,))
-            row = cursor.fetchone()
-            return row is not None
+        row = connection().execute("SELECT * FROM packages WHERE gotquestions_id = ?", (package_id,)).fetchone()
+        return row is not None
 
 
 if __name__ == "__main__":

@@ -1,7 +1,8 @@
-import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime as dt
+
+import apsw
 
 from db import connection
 
@@ -43,68 +44,67 @@ class Question:
 
     @classmethod
     def has_questions_from_package(cls, package_id):
-        with connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM questions WHERE package_id = ?", (package_id,))
-            return cursor.fetchone()[0] > 0
+        count = connection().execute("SELECT COUNT(*) FROM questions WHERE package_id = ?", (package_id,)).fetchone()
+        return count.fetchone()[0] > 0
 
     @classmethod
     def delete_all_questions_for_package(cls, package_id):
         with connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
+            conn.execute(
                 """
                 DELETE FROM images 
                 WHERE question_id IN (SELECT id FROM questions WHERE package_id = ?)
             """,
                 (package_id,),
             )
-            cursor.execute("DELETE FROM questions WHERE package_id = ?", (package_id,))
-            conn.commit()
+            conn.execute("DELETE FROM questions WHERE package_id = ?", (package_id,))
 
     @classmethod
     def question_ids_for_year(cls, year):
         start_timestamp = dt.timestamp(dt(year, 1, 1))
         end_timestamp = dt.timestamp(dt(year + 1, 1, 1))
-        with connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
+        rows = (
+            connection()
+            .execute(
                 """
-                SELECT id FROM questions 
-                WHERE package_id IN (
-                    SELECT gotquestions_id FROM packages WHERE end_date between ? and ?
-                )
-                AND is_incorrect = 0
-            """,
+            SELECT id FROM questions 
+            WHERE package_id IN (
+                SELECT gotquestions_id FROM packages WHERE end_date between ? and ?
+            )
+            AND is_incorrect = 0
+        """,
                 (start_timestamp, end_timestamp),
             )
-            return [row[0] for row in cursor.fetchall()]
+            .fetchall()
+        )
+
+        return [row[0] for row in rows]
 
     @classmethod
     def find(cls, ids: list[int]) -> list["Question"]:
-        with connection() as conn:
-            cursor = conn.cursor()
-            cursor.row_factory = sqlite3.Row
-            rows = cursor.execute(
-                f"""
-                select q.id, q.question, q.answer, q.comment, q.accepted_answer, q.handout_str, q.source, 
-                    i.mime_type, i.data as image_data 
-                from questions q
-                left join images i on q.id = i.question_id
-                where q.id in ({",".join("?" * len(ids))})
-            """,
-                ids,
-            ).fetchall()
-            return [
-                cls(
-                    id=row["id"],
-                    question=row["question"],
-                    answer=row["answer"],
-                    accepted_answer=row["accepted_answer"],
-                    comment=row["comment"],
-                    handout_str=row["handout_str"],
-                    handout_img=row["image_data"],
-                    source=row["source"],
-                )
-                for row in rows
-            ]
+        conn = connection()
+        conn.row_trace = apsw.ext.DataClassRowFactory(dataclass_kwargs={"frozen": True})
+
+        rows = conn.execute(
+            f"""
+            select q.id, q.question, q.answer, q.comment, q.accepted_answer, q.handout_str, q.source, 
+                i.mime_type, i.data as image_data 
+            from questions q
+            left join images i on q.id = i.question_id
+            where q.id in ({",".join("?" * len(ids))})
+        """,
+            ids,
+        ).fetchall()
+        return [
+            cls(
+                id=row.id,
+                question=row.question,
+                answer=row.answer,
+                accepted_answer=row.accepted_answer,
+                comment=row.comment,
+                handout_str=row.handout_str,
+                handout_img=row.image_data,
+                source=row.source,
+            )
+            for row in rows
+        ]

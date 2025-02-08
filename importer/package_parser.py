@@ -40,14 +40,13 @@ class PackageParser:
     @staticmethod
     def insert_question(question: Question):
         with connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute(
+            question_id = conn.execute(
                 """
                 INSERT INTO questions (
                     gotquestions_id, question, answer, accepted_answer, comment, handout_str, source, author_id, 
                     package_id, difficulty, is_incorrect
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                RETURNING id
             """,
                 (
                     question.got_questions_id,
@@ -62,22 +61,19 @@ class PackageParser:
                     question.difficulty,
                     question.is_incorrect,
                 ),
-            )
+            ).get
 
             if question.handout_img:
-                question_id = cursor.lastrowid
                 image_url = f"https://gotquestions.online/{question.handout_img}"
                 response = requests.get(image_url)
                 image_data = response.content
                 mime_type = response.headers.get("Content-Type")
-                cursor.execute(
+                conn.execute(
                     """
                     INSERT INTO images (question_id, image_url, data, mime_type) VALUES (?, ?, ?, ?)
                 """,
                     (question_id, question.handout_img, image_data, mime_type),
                 )
-
-            conn.commit()
 
 
 if __name__ == "__main__":

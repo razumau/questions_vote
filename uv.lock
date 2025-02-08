@@ -28,6 +28,34 @@ wheels = [
 ]
 
 [[package]]
+name = "apsw"
+version = "3.49.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/73/6a/0657b333330884272a8af12513f13655ea71fa819d2ed87e7ac1029364b8/apsw-3.49.0.0.tar.gz", hash = "sha256:ac7a38a74ceadc820df66709dd7169d94f0f2cfba95670148602a96198f79c84", size = 1044346 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/ea/2dac2b6a5bb9889689d64ae018d61e9713719c766db75c575520830eda7b/apsw-3.49.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:16163fa77daba75c0e96d9fda0f333bfc06cbd5f617a8aa96e662212cb163fb9", size = 1838543 },
+    { url = "https://files.pythonhosted.org/packages/20/eb/29c5351e6159819dd642362f11c33c027325c0f242ccf7f7bcd25f5a2e10/apsw-3.49.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c791030377c5e0c6c055bdad8fc8b771082000496c9a985c5dc247ad404d827e", size = 1776081 },
+    { url = "https://files.pythonhosted.org/packages/79/49/d1ac8297e1ec8865c1d1a19dc4fa76e44b2199d6bf8ad1c4300bc1c5040d/apsw-3.49.0.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a99efff812a7817b50841b873f3957e06b476f42c526537e0f60c2491d77d9a1", size = 6523336 },
+    { url = "https://files.pythonhosted.org/packages/f6/ee/2012faf7f7e219d757245385cd3e38dba6e36c0b9fc229ee364090621029/apsw-3.49.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:41c7591da475d2d1a7b1eac4d982a001d9c6365d5fd859cd833e11eea82c2fe3", size = 6434667 },
+    { url = "https://files.pythonhosted.org/packages/b5/39/5eacbdad8ea4896d52e3c9ad0de18ba522f3dff30ae965d58d9f81ffe65e/apsw-3.49.0.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c44778a6d2b85ea254bb08548a3279d65e8ffb807b449e0b5dbcad610e42d364", size = 6386733 },
+    { url = "https://files.pythonhosted.org/packages/e0/c5/eb2c12a0219ecc03491764175b46fa2aef4376d346c80af58b4f720bf821/apsw-3.49.0.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:16f086c75672add63f6625bb6ec1855aeeddb07db81b1b061e90fd1a9f5511dd", size = 6533580 },
+    { url = "https://files.pythonhosted.org/packages/33/81/3911e898f2ad4999348b3279fb4a211921f802136be311c7bcd4cdf2ba83/apsw-3.49.0.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:065a86cae8ab9eebed93f112e71ee07109ad9583e5616c7fabb60a300329ce61", size = 6442793 },
+    { url = "https://files.pythonhosted.org/packages/dc/bc/1fdfbe8454324fdec4b2f68d3e81b185bc7a33929bca66187de6fa1503c5/apsw-3.49.0.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:95765f3772dbdae73902c46c84469e0e7ae1a218536b8258719f7a952661f6b1", size = 6418897 },
+    { url = "https://files.pythonhosted.org/packages/d0/e9/4c9b649bd07c1e52ce612bd5e8e86c15252f688fcc19cba5b5116f4ff91b/apsw-3.49.0.0-cp312-cp312-win32.whl", hash = "sha256:9608bc69e518a5d00dfecb3d4e337a2651da420c112f294b32c4e851ae299108", size = 1498429 },
+    { url = "https://files.pythonhosted.org/packages/90/07/ec44fc379d085e8d8d3ce241b74a33c076b79611db98539281c8827236d8/apsw-3.49.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:3f92732859fc0989bdb9801d695d37a3355a661b1d2371958b025f46234d3778", size = 1660906 },
+    { url = "https://files.pythonhosted.org/packages/ef/06/84a9d213ed4bee5acbe1e7888e41074a322371ccea5550a9c6d1d5a60bd0/apsw-3.49.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:f655d3629f8e6401d973155d40aed364e4955474748bc90cdc5e5124aae52c8c", size = 1836680 },
+    { url = "https://files.pythonhosted.org/packages/38/5d/01902b4981e1da408fd787319b33e84f33d64bf26790d3df08f438f59f0c/apsw-3.49.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:8202578a64122c60fef168c3b491bc1990b780dee701e2b08d1d6f70dd85386c", size = 1774442 },
+    { url = "https://files.pythonhosted.org/packages/4e/c4/b33974f7e3e61876e590e95f9acac5203776bf51fe2375bcd0e20260bb98/apsw-3.49.0.0-cp313-cp313-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:17e0b68dd7a0f63ea6c9649daf007cf25510d8d650dd32c31152683b3259c82b", size = 6531083 },
+    { url = "https://files.pythonhosted.org/packages/2b/24/153734b7e06cd9d71760fe01d32aa851949c4f5b01d7f81d34327a91f3f2/apsw-3.49.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:16804ad2707fdaec2f0f0a8f8398b660b745624e62414479f04a40e984dfcb6a", size = 6445742 },
+    { url = "https://files.pythonhosted.org/packages/d2/74/da355fdb1edad28cabc257a873325177a6140aebf289b31c47f394b354b4/apsw-3.49.0.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c91e12f2c429128da98949b21ac6df16582dc9b4cbee3f3c8f8ea26bb7ddebe2", size = 6398716 },
+    { url = "https://files.pythonhosted.org/packages/34/e5/4539222fcf7db8ba32f15a2a5ff2bd57a826c132ef37d1219f7fceedc798/apsw-3.49.0.0-cp313-cp313-musllinux_1_2_aarch64.whl", hash = "sha256:ccfc1d3b0deed0845fc2ea60cd9b90d118f7235235beb8a6075fbca2f2aeba2d", size = 6544892 },
+    { url = "https://files.pythonhosted.org/packages/8c/49/704b44c4cfe55dfed17ef10fdb249f139bb1f2ed9a6359643ba7bd8db8ae/apsw-3.49.0.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:cbd2f331902238b4519695c20d19b2bfe8c20f36b1fea0283195e645e63ac830", size = 6452959 },
+    { url = "https://files.pythonhosted.org/packages/af/3f/9491102e913d316da7f041d2d68a17e79c5738a32879327e7ea2a4768056/apsw-3.49.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:7ad9d74b85375d287e66f2e3e01d5c0769691118859b6d17e36efe8fa1e08b30", size = 6430412 },
+    { url = "https://files.pythonhosted.org/packages/6c/5b/7db775de8e4afeabc36320657d836b976576ffda9517839a38b7b5378b71/apsw-3.49.0.0-cp313-cp313-win32.whl", hash = "sha256:62dd4ba8c0dec0c20ef17322dec9ec9651d64aed1adf98bf9f5594ec9ba11efd", size = 1497394 },
+    { url = "https://files.pythonhosted.org/packages/7a/c3/4bb808f779683f6ede90af5cd7b5ca3e19377ef81c9ec56d5e64d81f4781/apsw-3.49.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:6e68629504726092a49e32fd4e7f4791a732a545f6af7ad991c8d47fa639c0fd", size = 1659581 },
+]
+
+[[package]]
 name = "asttokens"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -355,6 +383,7 @@ name = "questions-vote"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "apsw" },
     { name = "beautifulsoup4" },
     { name = "ipython" },
     { name = "python-docx" },
@@ -367,6 +396,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "apsw", specifier = ">=3.49.0.0" },
     { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "ipython", specifier = ">=8.32.0" },
     { name = "python-docx", specifier = ">=1.1.2" },

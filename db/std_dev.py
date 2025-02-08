@@ -1,9 +1,9 @@
-import sqlite3
+import apsw
 import math
 from typing import Union
 
 
-def create_stddev_function(connection: sqlite3.Connection) -> None:
+def create_stddev_function(connection: apsw.Connection) -> None:
     class StdDev:
         def __init__(self):
             self.n: int = 0
@@ -17,7 +17,7 @@ def create_stddev_function(connection: sqlite3.Connection) -> None:
                 self.sum += value
                 self.sum_sq += value * value
 
-        def finalize(self) -> Union[float, None]:
+        def final(self) -> Union[float, None]:
             if self.n < 1:
                 return None
 
@@ -28,4 +28,4 @@ def create_stddev_function(connection: sqlite3.Connection) -> None:
                 variance = 0
             return math.sqrt(variance)
 
-    connection.create_aggregate("stddev", 1, StdDev)
+    connection.create_aggregate_function("stddev", StdDev)

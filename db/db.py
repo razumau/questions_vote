@@ -1,9 +1,11 @@
 import logging
-import sqlite3
 import os
 import datetime
 
 from dotenv import load_dotenv
+import apsw.bestpractice
+import apsw.ext
+
 
 from db.std_dev import create_stddev_function
 
@@ -29,11 +31,6 @@ def adapt_datetime_epoch(val):
     return int(val.timestamp())
 
 
-sqlite3.register_adapter(datetime.date, adapt_date_iso)
-sqlite3.register_adapter(datetime.datetime, adapt_datetime_iso)
-sqlite3.register_adapter(datetime.datetime, adapt_datetime_epoch)
-
-
 def convert_date(val):
     """Convert ISO 8601 date to datetime.date object."""
     return datetime.date.fromisoformat(val.decode())
@@ -49,40 +46,36 @@ def convert_timestamp(val):
     return datetime.datetime.fromtimestamp(int(val))
 
 
-sqlite3.register_converter("date", convert_date)
-sqlite3.register_converter("datetime", convert_datetime)
-sqlite3.register_converter("timestamp", convert_timestamp)
-
-
-_connection = None
-
-
-def connection():
-    global _connection
-    if _connection is None:
-        _connection = sqlite3.connect(DB_PATH, detect_types=sqlite3.PARSE_DECLTYPES)
-        set_pragmas()
-    return _connection
+def connection() -> apsw.Connection:
+    return apsw.Connection(DB_PATH, flags=apsw.SQLITE_OPEN_READWRITE)
 
 
 def set_pragmas():
-    with connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA journal_mode = WAL")
-        cursor.execute("PRAGMA synchronous = NORMAL")
-        cursor.execute("PRAGMA busy_timeout = 5000")
-        cursor.execute("PRAGMA journal_size_limit = 67108864")
-        cursor.execute("PRAGMA mmap_size = 134217728")
-        cursor.execute("PRAGMA cache_size = 2000")
-        cursor.execute("PRAGMA busy_timeout = 5000")
+    apsw.bestpractice.apply(apsw.bestpractice.recommended)
+    conn = connection()
+    conn.pragma("synchronous", "NORMAL")
+    conn.pragma("cache_size", 2000)
+    conn.pragma("mmap_size", 134217728)
+    conn.pragma("journal_size_limit", 67108864)
+    conn.pragma("busy_timeout", 5000)
+
+
+def register_adapters():
+    conn = connection()
+    registrar = apsw.ext.TypesConverterCursorFactory()
+    conn.cursor_factory = registrar
+    registrar.register_adapter(datetime.date, adapt_date_iso)
+    registrar.register_adapter(datetime.datetime, adapt_datetime_iso)
+    registrar.register_adapter(datetime.datetime, adapt_datetime_epoch)
+    registrar.register_converter("date", convert_date)
+    registrar.register_converter("datetime", convert_datetime)
+    registrar.register_converter("timestamp", convert_timestamp)
 
 
 def create_tables():
     logger.info("Creating tables if necessary...")
     with connection() as conn:
-        cursor = conn.cursor()
-
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS questions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 gotquestions_id INTEGER NOT NULL,
@@ -101,8 +94,7 @@ def create_tables():
             )
         """)
 
-        # Create images table with foreign key to questions
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS images (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 question_id INTEGER,
@@ -113,7 +105,7 @@ def create_tables():
             )
         """)
 
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS votes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER NOT NULL,
@@ -127,7 +119,7 @@ def create_tables():
             )
         """)
 
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS packages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     gotquestions_id INTEGER NOT NULL,
@@ -140,7 +132,7 @@ def create_tables():
                 )
         """)
 
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS tournaments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
@@ -157,7 +149,7 @@ def create_tables():
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
                 """)
-        cursor.execute("""
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS tournament_questions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tournament_id INTEGER NOT NULL,
@@ -167,32 +159,25 @@ def create_tables():
                 wins INTEGER DEFAULT 0
             )
         """)
-
-        conn.commit()
     logger.info("Tables created")
 
 
 def setup_database():
-    set_pragmas()
     create_tables()
     create_stddev_function(connection())
 
 
 def clean_database():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""DELETE FROM packages""")
-        cursor.execute("""DELETE FROM images""")
-        cursor.execute("""DELETE FROM questions""")
-        cursor.execute("""DELETE FROM votes""")
-        conn.commit()
+    conn = connection()
+    conn.execute("""DELETE FROM packages""")
+    conn.execute("""DELETE FROM images""")
+    conn.execute("""DELETE FROM questions""")
+    conn.execute("""DELETE FROM votes""")
 
 
 def drop_tables():
-    with sqlite3.connect(DB_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute("""DROP TABLE IF EXISTS packages""")
-        cursor.execute("""DROP TABLE IF EXISTS images""")
-        cursor.execute("""DROP TABLE IF EXISTS questions""")
-        cursor.execute("""DROP TABLE IF EXISTS votes""")
-        conn.commit()
+    conn = connection()
+    conn.execute("""DROP TABLE IF EXISTS packages""")
+    conn.execute("""DROP TABLE IF EXISTS images""")
+    conn.execute("""DROP TABLE IF EXISTS questions""")
+    conn.execute("""DROP TABLE IF EXISTS votes""")
