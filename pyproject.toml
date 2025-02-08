@@ -12,6 +12,7 @@ dependencies = [
     "python-telegram-bot[job-queue]>=21.6",
     "requests>=2.32.3",
     "ruff>=0.9.3",
+    "sentry-sdk>=2.20.0",
 ]
 
 [tool.ruff]
