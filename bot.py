@@ -141,9 +141,12 @@ async def send_question(chat_id: int, context: ContextTypes.DEFAULT_TYPE, questi
 
 
 async def send_vote_job(context: ContextTypes.DEFAULT_TYPE):
-    with sentry_sdk.start_transaction(op="task", name="Send vote"):
+    with sentry_sdk.start_transaction(op="task", name="Send vote") as sentry_transaction:
         chat_id = context.job.chat_id
         q1, q2 = get_questions()
+
+        sentry_transaction.set_data("q1_id", q1.id)
+        sentry_transaction.set_data("q2_id", q2.id)
 
         await send_question(chat_id, context, q1, 1)
         await send_question(chat_id, context, q2, 2)
