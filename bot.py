@@ -25,7 +25,11 @@ if os.getenv("SENTRY_DSN"):
         profiles_sample_rate=1.0,
     )
 
-QUESTIONS_COUNT = Tournament.find_active_tournament().questions_count
+
+@lru_cache(maxsize=1)
+def questions_count():
+    return Tournament.find_active_tournament().questions_count
+
 
 @lru_cache(maxsize=1)
 def elo():
@@ -62,7 +66,7 @@ def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         f"Вспомнить хорошие вопросы спустя год сложно, поэтому я предлагаю вам сравнить все "
-        f"вопросы за 2022 год ({QUESTIONS_COUNT} штук). Бот будет присылать пары вопросов, и вам нужно будет выбрать, "
+        f"вопросы за 2022 год ({questions_count()} штук). Бот будет присылать пары вопросов, и вам нужно будет выбрать, "
         f"какой из двух лучше. Цель этого этапа — выбрать шортлист из 100 вопросов. Вопросы с низким (Эло-подобным) "
         f"рейтингом будут постепенно убираться, но не раньше, чем каждый поучаствует в пяти матчах."
     )
