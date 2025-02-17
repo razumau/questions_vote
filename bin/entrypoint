@@ -1,5 +1,8 @@
 #!/bin/sh
 
-litestream restore -o /app/questions.db /app/questions.db
-echo "Restored database from backup"
+if [ ! -f /app/questions.db ]; then
+  litestream restore -o /app/questions.db /app/questions.db
+  echo "Restored database from backup"
+fi
+
 litestream replicate
