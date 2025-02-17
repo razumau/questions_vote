@@ -25,6 +25,7 @@ if os.getenv("SENTRY_DSN"):
         profiles_sample_rate=1.0,
     )
 
+QUESTIONS_COUNT = Tournament.find_active_tournament().questions_count
 
 @lru_cache(maxsize=1)
 def elo():
@@ -60,7 +61,10 @@ def create_vote_keyboard(q1_id: int, q2_id: int) -> InlineKeyboardMarkup:
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Welcome to the Question Vote Bot! Use /vote to get two random questions to compare."
+        f"Вспомнить хорошие вопросы спустя год сложно, поэтому я предлагаю вам сравнить все "
+        f"вопросы за 2022 год ({QUESTIONS_COUNT} штук). Бот будет присылать пары вопросов, и вам нужно будет выбрать, "
+        f"какой из двух лучше. Цель этого этапа — выбрать шортлист из 100 вопросов. Вопросы с низким (Эло-подобным) "
+        f"рейтингом будут постепенно убираться, но не раньше, чем каждый поучаствует в пяти матчах."
     )
 
 
@@ -87,7 +91,7 @@ def confirmation_message(q1_id: int, q2_id: int, selected_id: int) -> str:
     elif selected_id == q2_id:
         return "Записали, что второй вопрос лучше."
     else:
-        return "Ничего не изменилось для этих вопросов."
+        return "Ок, сейчас пришлём другую пару вопросов."
 
 
 def inflect_wins(number: int) -> str:
@@ -113,7 +117,10 @@ def inflect_matches(number: int) -> str:
 
 
 @sentry_sdk.trace
-def questions_stats_message(q1_id: int, q2_id: int) -> str:
+def questions_stats_message(q1_id: int, q2_id: int, selected_id: Optional[int]) -> str:
+    if not selected_id:
+        return ""
+
     questions_stats = elo().get_questions_stats(q1_id, q2_id)
     first_wins, first_matches = questions_stats[0]["wins"], questions_stats[0]["matches"]
     second_wins, second_matches = questions_stats[1]["wins"], questions_stats[1]["matches"]
@@ -173,7 +180,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         save_vote(user_id=query.from_user.id, question1_id=q1_id, question2_id=q2_id, selected_id=selected_id)
 
-    response = f"{confirmation_message(q1_id, q2_id, selected_id)} {questions_stats_message(q1_id, q2_id)}"
+    response = f"{confirmation_message(q1_id, q2_id, selected_id)} {questions_stats_message(q1_id, q2_id, selected_id)}"
     await query.edit_message_text(text=textwrap.dedent(response))
     await vote_command(update, context)
 
