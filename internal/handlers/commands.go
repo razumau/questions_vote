@@ -11,7 +11,19 @@ import (
 
 // handleStart handles the /start command
 func (h *BotHandler) handleStart(bot *telego.Bot, update telego.Update) {
-	questionsCount := h.GetQuestionsCount()
+	questionsCount, err := h.GetQuestionsCount()
+	if err != nil {
+		log.Printf("Failed to get questions count: %v", err)
+		// Send error message to user
+		_, sendErr := bot.SendMessage(context.Background(), &telego.SendMessageParams{
+			ChatID: tu.ID(update.Message.Chat.ID),
+			Text:   "Извините, произошла ошибка при получении информации о турнире. Попробуйте позже.",
+		})
+		if sendErr != nil {
+			log.Printf("Failed to send error message: %v", sendErr)
+		}
+		return
+	}
 	
 	message := fmt.Sprintf(
 		"Вспомнить хорошие вопросы спустя год сложно, поэтому я предлагаю вам сравнить все "+
@@ -21,7 +33,7 @@ func (h *BotHandler) handleStart(bot *telego.Bot, update telego.Update) {
 		questionsCount,
 	)
 	
-	_, err := bot.SendMessage(context.Background(), &telego.SendMessageParams{
+	_, err = bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID: tu.ID(update.Message.Chat.ID),
 		Text:   message,
 	})
@@ -39,12 +51,28 @@ func (h *BotHandler) handleVote(bot *telego.Bot, update telego.Update) {
 	canSendIn := h.rateLimiter.CanSendInSeconds(chatID)
 	if canSendIn > 0 {
 		log.Printf("Rate limited for chat %d, can send in %d seconds", chatID, canSendIn)
-		// For now, just proceed - in production you might want to delay
+		// Send rate limit message to user
+		_, err := bot.SendMessage(context.Background(), &telego.SendMessageParams{
+			ChatID: tu.ID(chatID),
+			Text:   fmt.Sprintf("Пожалуйста, подождите %d секунд перед следующим голосованием.", canSendIn),
+		})
+		if err != nil {
+			log.Printf("Failed to send rate limit message: %v", err)
+		}
+		return
 	}
 	
 	// Get questions and send them
 	err := h.sendVoteQuestions(chatID)
 	if err != nil {
 		log.Printf("Failed to send vote questions: %v", err)
+		// Send error message to user
+		_, sendErr := bot.SendMessage(context.Background(), &telego.SendMessageParams{
+			ChatID: tu.ID(chatID),
+			Text:   "Извините, произошла ошибка при получении вопросов. Попробуйте позже.",
+		})
+		if sendErr != nil {
+			log.Printf("Failed to send error message: %v", sendErr)
+		}
 	}
 }

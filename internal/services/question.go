@@ -25,68 +25,24 @@ func (s *QuestionService) GetQuestions() ([]*models.Question, error) {
 	// Get the active tournament
 	tournament, err := s.tournamentRepo.FindActiveTournament()
 	if err != nil {
-		// Fallback to mock data if no active tournament
-		return []*models.Question{
-			{
-				ID:       1,
-				Question: "Sample question 1?",
-				Answer:   "Sample answer 1",
-				Comment:  "Sample comment 1",
-				Source:   "Sample source 1",
-			},
-			{
-				ID:       2,
-				Question: "Sample question 2?",
-				Answer:   "Sample answer 2",
-				Comment:  "Sample comment 2",
-				Source:   "Sample source 2",
-			},
-		}, nil
+		return nil, fmt.Errorf("failed to find active tournament: %w", err)
 	}
 	
 	// Use ELO system to select question pair
 	eloSystem := elo.New(tournament)
 	q1ID, q2ID, err := eloSystem.SelectPair()
 	if err != nil {
-		// Fallback to mock data if ELO selection fails
-		return []*models.Question{
-			{
-				ID:       1,
-				Question: "Sample question 1?",
-				Answer:   "Sample answer 1",
-				Comment:  "Sample comment 1",
-				Source:   "Sample source 1",
-			},
-			{
-				ID:       2,
-				Question: "Sample question 2?",
-				Answer:   "Sample answer 2",
-				Comment:  "Sample comment 2",
-				Source:   "Sample source 2",
-			},
-		}, nil
+		return nil, fmt.Errorf("failed to select question pair: %w", err)
 	}
 	
 	// Get the actual questions from the database
 	questions, err := s.questionRepo.FindByIDs([]int{q1ID, q2ID})
 	if err != nil {
-		// Fallback to mock data if database query fails
-		return []*models.Question{
-			{
-				ID:       q1ID,
-				Question: "Sample question " + fmt.Sprintf("%d", q1ID) + "?",
-				Answer:   "Sample answer " + fmt.Sprintf("%d", q1ID),
-				Comment:  "Sample comment " + fmt.Sprintf("%d", q1ID),
-				Source:   "Sample source " + fmt.Sprintf("%d", q1ID),
-			},
-			{
-				ID:       q2ID,
-				Question: "Sample question " + fmt.Sprintf("%d", q2ID) + "?",
-				Answer:   "Sample answer " + fmt.Sprintf("%d", q2ID),
-				Comment:  "Sample comment " + fmt.Sprintf("%d", q2ID),
-				Source:   "Sample source " + fmt.Sprintf("%d", q2ID),
-			},
-		}, nil
+		return nil, fmt.Errorf("failed to find questions by IDs %v: %w", []int{q1ID, q2ID}, err)
+	}
+	
+	if len(questions) != 2 {
+		return nil, fmt.Errorf("expected 2 questions, got %d", len(questions))
 	}
 	
 	return questions, nil
@@ -101,7 +57,7 @@ func (s *QuestionService) FindQuestions(ids []int) ([]*models.Question, error) {
 func (s *QuestionService) GetQuestionsCount() (int, error) {
 	tournament, err := s.tournamentRepo.FindActiveTournament()
 	if err != nil {
-		return 1000, nil // Fallback value
+		return 0, fmt.Errorf("failed to find active tournament: %w", err)
 	}
 	return tournament.QuestionsCount, nil
 }

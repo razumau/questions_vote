@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"log"
 	"questions-vote/internal/elo"
 	"questions-vote/internal/models"
@@ -66,24 +67,14 @@ func (s *VoteService) GetQuestionStats(question1ID, question2ID int) ([]models.Q
 	// Get active tournament
 	tournament, err := s.tournamentRepo.FindActiveTournament()
 	if err != nil {
-		log.Printf("Failed to get active tournament for stats: %v", err)
-		// Fallback to mock data
-		return []models.QuestionStats{
-			{Wins: 5, Matches: 10},
-			{Wins: 3, Matches: 8},
-		}, nil
+		return nil, fmt.Errorf("failed to find active tournament: %w", err)
 	}
 	
 	// Use ELO system to get question stats
 	eloSystem := elo.New(tournament)
 	stats, err := eloSystem.GetQuestionsStats(question1ID, question2ID)
 	if err != nil {
-		log.Printf("Failed to get question stats from ELO: %v", err)
-		// Fallback to mock data
-		return []models.QuestionStats{
-			{Wins: 5, Matches: 10},
-			{Wins: 3, Matches: 8},
-		}, nil
+		return nil, fmt.Errorf("failed to get question stats from ELO: %w", err)
 	}
 	
 	return stats, nil

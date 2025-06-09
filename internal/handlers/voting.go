@@ -174,5 +174,13 @@ func (h *BotHandler) handleCallback(bot *telego.Bot, update telego.Update) {
 	err = h.sendVoteQuestions(chatID)
 	if err != nil {
 		log.Printf("Failed to send next vote questions: %v", err)
+		// Send error message to user
+		_, sendErr := bot.SendMessage(context.Background(), &telego.SendMessageParams{
+			ChatID: tu.ID(chatID),
+			Text:   "Произошла ошибка при получении следующих вопросов. Попробуйте команду /vote снова.",
+		})
+		if sendErr != nil {
+			log.Printf("Failed to send error message: %v", sendErr)
+		}
 	}
 }

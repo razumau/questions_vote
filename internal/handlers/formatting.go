@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"questions-vote/internal/models"
 	"strings"
 )
@@ -60,10 +61,12 @@ func (h *BotHandler) getQuestionStatsMessage(q1ID, q2ID int, selectedID *int) st
 	
 	stats, err := h.voteService.GetQuestionStats(q1ID, q2ID)
 	if err != nil {
+		log.Printf("Failed to get question stats: %v", err)
 		return ""
 	}
 	
 	if len(stats) < 2 {
+		log.Printf("Expected 2 question stats, got %d", len(stats))
 		return ""
 	}
 	

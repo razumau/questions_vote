@@ -42,13 +42,12 @@ func NewBotHandler() (*BotHandler, error) {
 
 
 // GetQuestionsCount returns the total number of questions
-func (h *BotHandler) GetQuestionsCount() int {
+func (h *BotHandler) GetQuestionsCount() (int, error) {
 	count, err := h.questionService.GetQuestionsCount()
 	if err != nil {
-		log.Printf("Failed to get questions count: %v", err)
-		return 1000 // Fallback value
+		return 0, fmt.Errorf("failed to get questions count: %w", err)
 	}
-	return count
+	return count, nil
 }
 
 // Run starts the bot
