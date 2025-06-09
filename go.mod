@@ -2,6 +2,8 @@ module questions-vote
 
 go 1.24.4
 
+require github.com/mymmrac/telego v1.1.1
+
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
@@ -10,7 +12,6 @@ require (
 	github.com/grbit/go-json v0.11.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
-	github.com/mymmrac/telego v1.1.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.62.0 // indirect

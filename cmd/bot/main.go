@@ -2,19 +2,23 @@ package main
 
 import (
 	"log"
-	"os"
+	"questions-vote/internal/handlers"
 )
 
 func main() {
 	log.Println("Starting questions-vote bot...")
 	
 	// TODO: Initialize database
-	// TODO: Set up Telegram bot
-	// TODO: Set up handlers
-	// TODO: Start polling
 	
-	log.Println("Bot started successfully")
+	// Create and start bot handler
+	botHandler, err := handlers.NewBotHandler()
+	if err != nil {
+		log.Fatalf("Failed to create bot handler: %v", err)
+	}
 	
-	// Keep the application running
-	select {}
+	// Run the bot
+	err = botHandler.Run()
+	if err != nil {
+		log.Fatalf("Bot failed to run: %v", err)
+	}
 }
