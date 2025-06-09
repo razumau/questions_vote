@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -20,7 +21,7 @@ func (h *BotHandler) handleStart(bot *telego.Bot, update telego.Update) {
 		questionsCount,
 	)
 	
-	_, err := bot.SendMessage(&telego.SendMessageParams{
+	_, err := bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID: tu.ID(update.Message.Chat.ID),
 		Text:   message,
 	})

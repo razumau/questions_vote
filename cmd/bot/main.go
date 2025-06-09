@@ -2,13 +2,21 @@ package main
 
 import (
 	"log"
+	"questions-vote/internal/db"
 	"questions-vote/internal/handlers"
 )
 
 func main() {
 	log.Println("Starting questions-vote bot...")
 	
-	// TODO: Initialize database
+	// Initialize database
+	err := db.Initialize()
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+	
+	log.Println("Database initialized successfully")
 	
 	// Create and start bot handler
 	botHandler, err := handlers.NewBotHandler()

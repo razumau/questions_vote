@@ -1,19 +1,15 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
-	"questions-vote/internal/models"
 	"questions-vote/internal/services"
 	"questions-vote/pkg/ratelimiter"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/mymmrac/telego"
-	th "github.com/mymmrac/telego/telegohandler"
-	tu "github.com/mymmrac/telego/telegoutil"
 )
 
 // BotHandler handles all bot operations
@@ -44,29 +40,47 @@ func NewBotHandler() (*BotHandler, error) {
 	}, nil
 }
 
-// SetupHandlers configures all bot handlers
-func (h *BotHandler) SetupHandlers() {
-	bh, _ := th.NewBotHandler(h.bot, nil)
-
-	bh.Handle(h.handleStart, th.CommandEqual("start"))
-	bh.Handle(h.handleVote, th.CommandEqual("vote"))
-	bh.Handle(h.handleCallback, th.CallbackDataPrefix("vote_"))
-
-	go bh.Start()
-}
 
 // GetQuestionsCount returns the total number of questions
 func (h *BotHandler) GetQuestionsCount() int {
-	// TODO: Get from tournament service
-	return 1000 // Mock value
+	count, err := h.questionService.GetQuestionsCount()
+	if err != nil {
+		log.Printf("Failed to get questions count: %v", err)
+		return 1000 // Fallback value
+	}
+	return count
 }
 
 // Run starts the bot
 func (h *BotHandler) Run() error {
-	h.SetupHandlers()
+	updates, err := h.bot.UpdatesViaLongPolling(context.Background(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to get updates: %w", err)
+	}
 	
 	log.Println("Bot is running...")
 	
-	// Keep the bot running
-	select {}
+	// Process updates
+	for update := range updates {
+		go h.processUpdate(update)
+	}
+	
+	return nil
+}
+
+// processUpdate processes a single update
+func (h *BotHandler) processUpdate(update telego.Update) {
+	if update.Message != nil {
+		if update.Message.Text == "/start" {
+			h.handleStart(h.bot, update)
+		} else if update.Message.Text == "/vote" {
+			h.handleVote(h.bot, update)
+		}
+	} else if update.CallbackQuery != nil {
+		if update.CallbackQuery.Data != "" && 
+		   len(update.CallbackQuery.Data) > 5 && 
+		   update.CallbackQuery.Data[:5] == "vote_" {
+			h.handleCallback(h.bot, update)
+		}
+	}
 }

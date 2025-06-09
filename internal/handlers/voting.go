@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"questions-vote/internal/models"
@@ -40,7 +41,7 @@ func (h *BotHandler) sendVoteQuestions(chatID int64) error {
 	keyboard := h.createVoteKeyboard(q1.ID, q2.ID)
 	h.rateLimiter.Record(chatID)
 	
-	_, err = h.bot.SendMessage(&telego.SendMessageParams{
+	_, err = h.bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID:      tu.ID(chatID),
 		Text:        "Какой вопрос лучше?",
 		ReplyMarkup: keyboard,
@@ -53,9 +54,9 @@ func (h *BotHandler) sendVoteQuestions(chatID int64) error {
 func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, number int) error {
 	// Send handout image if exists
 	if question.HandoutImg != "" {
-		_, err := h.bot.SendPhoto(&telego.SendPhotoParams{
+		_, err := h.bot.SendPhoto(context.Background(), &telego.SendPhotoParams{
 			ChatID: tu.ID(chatID),
-			Photo:  tu.File(tu.FileFromURL(question.HandoutImg)),
+			Photo:  tu.FileFromURL(question.HandoutImg),
 		})
 		if err != nil {
 			log.Printf("Failed to send handout image: %v", err)
@@ -64,7 +65,7 @@ func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, numbe
 	
 	// Format and send question text
 	questionText := h.formatQuestion(question, number)
-	_, err := h.bot.SendMessage(&telego.SendMessageParams{
+	_, err := h.bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID:    tu.ID(chatID),
 		Text:      questionText,
 		ParseMode: telego.ModeHTML,
@@ -152,14 +153,14 @@ func (h *BotHandler) handleCallback(bot *telego.Bot, update telego.Update) {
 	}
 	
 	// Answer callback and edit message
-	_, err = bot.AnswerCallbackQuery(&telego.AnswerCallbackQueryParams{
+	err = bot.AnswerCallbackQuery(context.Background(), &telego.AnswerCallbackQueryParams{
 		CallbackQueryID: query.ID,
 	})
 	if err != nil {
 		log.Printf("Failed to answer callback query: %v", err)
 	}
 	
-	_, err = bot.EditMessageText(&telego.EditMessageTextParams{
+	_, err = bot.EditMessageText(context.Background(), &telego.EditMessageTextParams{
 		ChatID:    tu.ID(query.Message.GetChat().ID),
 		MessageID: query.Message.GetMessageID(),
 		Text:      response,

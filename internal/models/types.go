@@ -27,10 +27,17 @@ type Vote struct {
 
 // Tournament represents a tournament with questions
 type Tournament struct {
-	ID             int    `json:"id"`
-	Name           string `json:"name"`
-	QuestionsCount int    `json:"questions_count"`
-	Active         bool   `json:"active"`
+	ID                     int     `json:"id"`
+	Name                   string  `json:"name"`
+	QuestionsCount         int     `json:"questions_count"`
+	Active                 bool    `json:"active"`
+	InitialK               float64 `json:"initial_k"`
+	MinimumK               float64 `json:"minimum_k"`
+	StdDevMultiplier       float64 `json:"std_dev_multiplier"`
+	InitialPhaseMatches    int     `json:"initial_phase_matches"`
+	TransitionPhaseMatches int     `json:"transition_phase_matches"`
+	TopN                   int     `json:"top_n"`
+	BandSize               int     `json:"band_size"`
 }
 
 // QuestionStats represents statistics for a question

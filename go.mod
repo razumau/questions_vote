@@ -2,7 +2,10 @@ module questions-vote
 
 go 1.24.4
 
-require github.com/mymmrac/telego v1.1.1
+require (
+	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/mymmrac/telego v1.1.1
+)
 
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
