@@ -8,7 +8,9 @@ require (
 )
 
 require (
+	github.com/PuerkitoBio/goquery v1.10.3 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
+	github.com/andybalholm/cascadia v1.3.3 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
 	github.com/cloudwego/base64x v0.1.5 // indirect
@@ -20,4 +22,5 @@ require (
 	github.com/valyala/fasthttp v1.62.0 // indirect
 	github.com/valyala/fastjson v1.6.4 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
+	golang.org/x/net v0.40.0 // indirect
 )

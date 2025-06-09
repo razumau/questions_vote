@@ -4,14 +4,19 @@ import "time"
 
 // Question represents a trivia question
 type Question struct {
-	ID             int    `json:"id"`
-	Question       string `json:"question"`
-	Answer         string `json:"answer"`
-	AcceptedAnswer string `json:"accepted_answer,omitempty"`
-	Comment        string `json:"comment"`
-	Source         string `json:"source"`
-	HandoutStr     string `json:"handout_str,omitempty"`
-	HandoutImg     string `json:"handout_img,omitempty"`
+	ID               int      `json:"id"`
+	GotQuestionsID   int      `json:"gotquestions_id,omitempty"`
+	Question         string   `json:"question"`
+	Answer           string   `json:"answer"`
+	AcceptedAnswer   string   `json:"accepted_answer,omitempty"`
+	Comment          string   `json:"comment"`
+	Source           string   `json:"source"`
+	HandoutStr       string   `json:"handout_str,omitempty"`
+	HandoutImg       string   `json:"handout_img,omitempty"`
+	AuthorID         *int     `json:"author_id,omitempty"`
+	PackageID        *int     `json:"package_id,omitempty"`
+	Difficulty       *float64 `json:"difficulty,omitempty"`
+	IsIncorrect      *bool    `json:"is_incorrect,omitempty"`
 }
 
 // Vote represents a user's vote between two questions

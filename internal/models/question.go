@@ -123,6 +123,103 @@ func (r *QuestionRepository) GetQuestionIDsForYear(year int) ([]int, error) {
 	return ids, rows.Err()
 }
 
+// HasQuestionsFromPackage checks if a package has any questions
+func (r *QuestionRepository) HasQuestionsFromPackage(packageID int) (bool, error) {
+	query := `SELECT 1 FROM questions WHERE package_id = ? LIMIT 1`
+	
+	var exists int
+	err := r.db.QueryRow(query, packageID).Scan(&exists)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("failed to check if package has questions: %w", err)
+	}
+	
+	return true, nil
+}
+
+// BuildQuestionFromDict creates a question from API response data
+func BuildQuestionFromDict(questionDict map[string]interface{}, packageID int) (*Question, error) {
+	id, ok := questionDict["id"].(float64)
+	if !ok {
+		return nil, fmt.Errorf("invalid id in question data")
+	}
+	
+	text, ok := questionDict["text"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid text in question data")
+	}
+	
+	answer, ok := questionDict["answer"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid answer in question data")
+	}
+	
+	// Optional fields with defaults
+	var zachet, comment, razdatkaText, razdatkaPic, source string
+	var complexity float64
+	var takenDown bool
+	var authorID *int
+	
+	if val, exists := questionDict["zachet"]; exists && val != nil {
+		zachet, _ = val.(string)
+	}
+	
+	if val, exists := questionDict["comment"]; exists && val != nil {
+		comment, _ = val.(string)
+	}
+	
+	if val, exists := questionDict["razdatkaText"]; exists && val != nil {
+		razdatkaText, _ = val.(string)
+	}
+	
+	if val, exists := questionDict["razdatkaPic"]; exists && val != nil {
+		razdatkaPic, _ = val.(string)
+	}
+	
+	if val, exists := questionDict["source"]; exists && val != nil {
+		source, _ = val.(string)
+	}
+	
+	if val, exists := questionDict["complexity"]; exists && val != nil {
+		complexity, _ = val.(float64)
+	}
+	
+	if val, exists := questionDict["takenDown"]; exists && val != nil {
+		takenDown, _ = val.(bool)
+	}
+	
+	// Handle authors array
+	if authorsInterface, exists := questionDict["authors"]; exists && authorsInterface != nil {
+		if authors, ok := authorsInterface.([]interface{}); ok && len(authors) > 0 {
+			if author, ok := authors[0].(map[string]interface{}); ok {
+				if idVal, exists := author["id"]; exists && idVal != nil {
+					if idFloat, ok := idVal.(float64); ok {
+						id := int(idFloat)
+						authorID = &id
+					}
+				}
+			}
+		}
+	}
+	
+	return &Question{
+		GotQuestionsID: int(id),
+		Question:       text,
+		Answer:         answer,
+		AcceptedAnswer: zachet,
+		Comment:        comment,
+		HandoutStr:     razdatkaText,
+		HandoutImg:     razdatkaPic,
+		Source:         source,
+		AuthorID:       authorID,
+		PackageID:      &packageID,
+		Difficulty:     &complexity,
+		IsIncorrect:    &takenDown,
+	}, nil
+}
+
 // Helper function to join strings
 func joinStrings(strs []string, sep string) string {
 	if len(strs) == 0 {

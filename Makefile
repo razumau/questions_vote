@@ -4,6 +4,7 @@
 build:
 	go build -o bin/bot ./cmd/bot
 	go build -o bin/admin ./cmd/admin
+	go build -o bin/importer ./cmd/importer
 
 # Run tests
 test:
@@ -11,7 +12,7 @@ test:
 
 # Clean build artifacts
 clean:
-	rm -f bin/bot bin/admin
+	rm -f bin/bot bin/admin bin/importer
 
 # Run the bot locally
 run:

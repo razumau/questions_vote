@@ -1,0 +1,115 @@
+package importer
+
+import (
+	"fmt"
+	"log"
+	"math/rand"
+	"questions-vote/internal/models"
+	"time"
+)
+
+// PackageLister fetches and stores package information from gotquestions.online
+type PackageLister struct {
+	FirstPage int
+	LastPage  int
+	repo      *models.PackageRepository
+}
+
+// NewPackageLister creates a new package lister
+func NewPackageLister(firstPage, lastPage int) *PackageLister {
+	return &PackageLister{
+		FirstPage: firstPage,
+		LastPage:  lastPage,
+		repo:      models.NewPackageRepository(),
+	}
+}
+
+// Run processes all pages from first to last
+func (pl *PackageLister) Run() error {
+	log.Printf("Starting package listing from page %d to %d", pl.FirstPage, pl.LastPage)
+	
+	for page := pl.FirstPage; page <= pl.LastPage; page++ {
+		if page%10 == 1 {
+			log.Printf("Processing page %d", page)
+		}
+		
+		err := pl.CreatePackagesFromPage(page)
+		if err != nil {
+			log.Printf("Error processing page %d: %v", page, err)
+			// Continue with next page instead of failing completely
+			continue
+		}
+		
+		// Sleep to avoid rate limiting
+		SleepAround(0.5, 0.3)
+	}
+	
+	log.Printf("Completed package listing")
+	return nil
+}
+
+// CreatePackagesFromPage fetches packages from a specific page
+func (pl *PackageLister) CreatePackagesFromPage(page int) error {
+	url := fmt.Sprintf("https://gotquestions.online/packs?page=%d", page)
+	
+	props, err := ExtractNextPropsFromURL(url)
+	if err != nil {
+		return fmt.Errorf("failed to extract props from page %d: %w", page, err)
+	}
+	
+	// Navigate to the packages data
+	pageProps, ok := props["props"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid props structure on page %d", page)
+	}
+	
+	pagePropsPacks, ok := pageProps["pageProps"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("invalid pageProps structure on page %d", page)
+	}
+	
+	packsInterface, ok := pagePropsPacks["packs"]
+	if !ok {
+		return fmt.Errorf("no packs found on page %d", page)
+	}
+	
+	packs, ok := packsInterface.([]interface{})
+	if !ok {
+		return fmt.Errorf("invalid packs structure on page %d", page)
+	}
+	
+	// Process each package
+	for _, packInterface := range packs {
+		packDict, ok := packInterface.(map[string]interface{})
+		if !ok {
+			log.Printf("Skipping invalid package structure on page %d", page)
+			continue
+		}
+		
+		pkg, err := models.BuildPackageFromDict(packDict)
+		if err != nil {
+			log.Printf("Failed to build package from data on page %d: %v", page, err)
+			continue
+		}
+		
+		err = pl.repo.Insert(pkg)
+		if err != nil {
+			log.Printf("Failed to insert package %d: %v", pkg.GotQuestionsID, err)
+			continue
+		}
+	}
+	
+	return nil
+}
+
+// SleepAround sleeps for a random duration around the specified seconds
+func SleepAround(seconds float64, deviation float64) {
+	min := seconds - deviation
+	max := seconds + deviation
+	if min < 0 {
+		min = 0
+	}
+	
+	duration := min + rand.Float64()*(max-min)
+	time.Sleep(time.Duration(duration * float64(time.Second)))
+}
