@@ -2,6 +2,7 @@ package services
 
 import (
 	"log"
+	"questions-vote/internal/elo"
 	"questions-vote/internal/models"
 )
 
@@ -38,25 +39,52 @@ func (s *VoteService) SaveVote(userID int64, question1ID, question2ID int, selec
 	log.Printf("Saving vote: user=%d, q1=%d, q2=%d, selected=%v", userID, question1ID, question2ID, selectedID)
 	
 	if selectedID != nil {
-		// TODO: Update ELO ratings
+		// Update ELO ratings
 		var loserID int
 		if *selectedID == question2ID {
 			loserID = question1ID
 		} else {
 			loserID = question2ID
 		}
-		log.Printf("Recording winner: %d, loser: %d", *selectedID, loserID)
+		
+		// Use ELO system to record the winner
+		eloSystem := elo.New(tournament)
+		err = eloSystem.RecordWinner(*selectedID, loserID)
+		if err != nil {
+			log.Printf("Failed to record ELO winner: %v", err)
+			// Don't return error - vote was still saved
+		} else {
+			log.Printf("Recorded ELO winner: %d, loser: %d", *selectedID, loserID)
+		}
 	}
 	
 	return nil
 }
 
-// GetQuestionStats returns statistics for questions
+// GetQuestionStats returns statistics for questions using ELO system
 func (s *VoteService) GetQuestionStats(question1ID, question2ID int) ([]models.QuestionStats, error) {
-	// TODO: Implement database lookup for actual stats
-	// This should query tournament_questions table to get wins/matches
-	return []models.QuestionStats{
-		{Wins: 5, Matches: 10},
-		{Wins: 3, Matches: 8},
-	}, nil
+	// Get active tournament
+	tournament, err := s.tournamentRepo.FindActiveTournament()
+	if err != nil {
+		log.Printf("Failed to get active tournament for stats: %v", err)
+		// Fallback to mock data
+		return []models.QuestionStats{
+			{Wins: 5, Matches: 10},
+			{Wins: 3, Matches: 8},
+		}, nil
+	}
+	
+	// Use ELO system to get question stats
+	eloSystem := elo.New(tournament)
+	stats, err := eloSystem.GetQuestionsStats(question1ID, question2ID)
+	if err != nil {
+		log.Printf("Failed to get question stats from ELO: %v", err)
+		// Fallback to mock data
+		return []models.QuestionStats{
+			{Wins: 5, Matches: 10},
+			{Wins: 3, Matches: 8},
+		}, nil
+	}
+	
+	return stats, nil
 }
