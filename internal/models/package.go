@@ -56,12 +56,12 @@ func BuildPackageFromDict(packageDict map[string]any) (*Package, error) {
 		return nil, fmt.Errorf("invalid questions count in package data")
 	}
 
-	startDate, err := time.Parse(time.RFC3339, startDateStr)
+	startDate, err := time.ParseInLocation("2006-01-02T15:04:05", startDateStr, time.UTC)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start date: %w", err)
 	}
 
-	endDate, err := time.Parse(time.RFC3339, endDateStr)
+	endDate, err := time.ParseInLocation("2006-01-02T15:04:05", endDateStr, time.UTC)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse end date: %w", err)
 	}
