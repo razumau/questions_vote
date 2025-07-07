@@ -41,7 +41,7 @@ func (pl *PackageLister) Run() error {
 		}
 
 		// Sleep to avoid rate limiting
-		SleepAround(0.5, 0.3)
+		SleepAround(1, 0.5)
 	}
 
 	log.Printf("Completed package listing")
@@ -57,7 +57,15 @@ func (pl *PackageLister) CreatePackagesFromPage(page int) error {
 		return fmt.Errorf("failed to extract data from page %d: %w", page, err)
 	}
 
-	packs, err := FindKeyInData(nextJsData, "packs")
+	packsKeyValue, err := FindKeyInData(nextJsData, "packs")
+	if err != nil {
+		return fmt.Errorf("failed to find packs in page %d: %w", page, err)
+	}
+
+	packs, ok := packsKeyValue.([]any)
+	if !ok {
+		return fmt.Errorf("packs was not a list in page %d: %w", page, err)
+	}
 
 	log.Printf("Found %d packs", len(packs))
 	for _, packInterface := range packs {

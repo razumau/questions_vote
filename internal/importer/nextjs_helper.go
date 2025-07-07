@@ -23,9 +23,9 @@ func ExtractNextJsDataFromURL(url string) (any, error) {
 
 	defer response.Body.Close()
 
-	script, found := findScriptWithSubstring(response, "packs")
+	script, found := findScriptWithSubstring(response, "questions")
 	if !found {
-		return nil, fmt.Errorf("failed to find <script> packs")
+		return nil, fmt.Errorf("failed to find <script> with questions")
 	}
 
 	fixedScript, err := extractJSONFromNextJSPush(script)
@@ -93,14 +93,11 @@ func ExtractNextPropsFromURL(url string) (map[string]any, error) {
 }
 
 // FindKeyInData recursively searches for the key in nested data
-func FindKeyInData(data any, key string) ([]any, error) {
+func FindKeyInData(data any, key string) (any, error) {
 	switch v := data.(type) {
 	case map[string]any:
 		if value, exists := v[key]; exists {
-			if mapValue, ok := value.([]any); ok {
-				return mapValue, nil
-			}
-			return nil, fmt.Errorf("key '%s' found but value is not a list", key)
+			return value, nil
 		}
 
 		for _, value := range v {

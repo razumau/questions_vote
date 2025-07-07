@@ -12,12 +12,12 @@ import (
 
 func main() {
 	var (
-		command = flag.String("command", "", "Command to run: list-packages, import-package, import-year")
+		command   = flag.String("command", "", "Command to run: list-packages, import-package, import-year")
 		firstPage = flag.Int("first-page", 1, "First page to process for list-packages")
-		lastPage = flag.Int("last-page", 337, "Last page to process for list-packages")
+		lastPage  = flag.Int("last-page", 349, "Last page to process for list-packages")
 		packageID = flag.Int("package-id", 0, "Package ID to import for import-package")
-		year = flag.Int("year", 0, "Year to import for import-year")
-		rewrite = flag.Bool("rewrite", true, "Rewrite existing questions when importing packages")
+		year      = flag.Int("year", 0, "Year to import for import-year")
+		rewrite   = flag.Bool("rewrite", true, "Rewrite existing questions when importing packages")
 	)
 	flag.Parse()
 
@@ -78,56 +78,56 @@ func printUsage() {
 
 func runListPackages(firstPage, lastPage int) error {
 	log.Printf("Starting package listing from page %d to %d", firstPage, lastPage)
-	
+
 	lister := importer.NewPackageLister(firstPage, lastPage)
 	err := lister.Run()
 	if err != nil {
 		return fmt.Errorf("failed to list packages: %w", err)
 	}
-	
+
 	log.Println("Package listing completed successfully")
 	return nil
 }
 
 func runImportPackage(packageID int, rewrite bool) error {
 	log.Printf("Starting import of package %d (rewrite: %v)", packageID, rewrite)
-	
+
 	parser := importer.NewPackageParser(packageID, rewrite)
 	err := parser.ImportPackage()
 	if err != nil {
 		return fmt.Errorf("failed to import package %d: %w", packageID, err)
 	}
-	
+
 	log.Printf("Package %d imported successfully", packageID)
 	return nil
 }
 
 func runImportYear(year int, rewrite bool) error {
 	log.Printf("Starting import of all packages for year %d (rewrite: %v)", year, rewrite)
-	
+
 	// Get all packages for the year
 	repo := models.NewPackageRepository()
 	packages, err := repo.GetPackagesByYear(year)
 	if err != nil {
 		return fmt.Errorf("failed to get packages for year %d: %w", year, err)
 	}
-	
+
 	if len(packages) == 0 {
 		log.Printf("No packages found for year %d", year)
 		return nil
 	}
-	
+
 	log.Printf("Found %d packages for year %d", len(packages), year)
-	
+
 	// Check if packages already have questions (if not rewriting)
 	questionRepo := models.NewQuestionRepository()
-	
+
 	successCount := 0
 	errorCount := 0
-	
+
 	for i, pkg := range packages {
 		log.Printf("Processing package %d/%d: %d (%s)", i+1, len(packages), pkg.GotQuestionsID, pkg.Title)
-		
+
 		// Check if package already has questions
 		if !rewrite {
 			hasQuestions, err := questionRepo.HasQuestionsFromPackage(pkg.GotQuestionsID)
@@ -140,7 +140,7 @@ func runImportYear(year int, rewrite bool) error {
 				continue
 			}
 		}
-		
+
 		// Import the package
 		parser := importer.NewPackageParser(pkg.GotQuestionsID, rewrite)
 		err = parser.ImportPackage()
@@ -149,18 +149,18 @@ func runImportYear(year int, rewrite bool) error {
 			errorCount++
 			continue
 		}
-		
+
 		successCount++
-		
+
 		// Sleep between packages to avoid rate limiting
 		importer.SleepAround(1.0, 0.7)
 	}
-	
+
 	log.Printf("Year %d import completed: %d successful, %d errors", year, successCount, errorCount)
-	
+
 	if errorCount > 0 {
 		return fmt.Errorf("completed with %d errors out of %d packages", errorCount, len(packages))
 	}
-	
+
 	return nil
 }

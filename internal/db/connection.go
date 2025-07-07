@@ -24,7 +24,6 @@ func Initialize() error {
 		return fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Test the connection
 	err = DB.Ping()
 	if err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)

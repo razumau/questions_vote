@@ -39,12 +39,22 @@ func (pp *PackageParser) ImportPackage() error {
 		}
 	}
 
-	props, err := ExtractNextPropsFromURL(pp.URL)
+	nextJsData, err := ExtractNextJsDataFromURL(pp.URL)
 	if err != nil {
-		return fmt.Errorf("failed to extract props from package %d: %w", pp.PackageID, err)
+		return fmt.Errorf("failed to extract data from URL %s: %w", pp.URL, err)
 	}
 
-	questions, err := pp.extractQuestions(props)
+	packKeyValue, err := FindKeyInData(nextJsData, "pack")
+	if err != nil {
+		return fmt.Errorf("could not find pack key at URL %s: %w", pp.URL, err)
+	}
+
+	pack, ok := packKeyValue.(map[string]any)
+	if !ok {
+		return fmt.Errorf("pack was not a dict at URL %s", pp.URL)
+	}
+
+	questions, err := pp.extractQuestions(pack)
 	if err != nil {
 		return fmt.Errorf("failed to extract questions: %w", err)
 	}
@@ -74,75 +84,33 @@ func (pp *PackageParser) ImportPackage() error {
 }
 
 // extractQuestions extracts questions from the props data
-func (pp *PackageParser) extractQuestions(props map[string]interface{}) ([]map[string]interface{}, error) {
-	pageProps, ok := props["props"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid props structure")
-	}
-
-	pagePropsPack, ok := pageProps["pageProps"].(map[string]interface{})
-	if !ok {
-		return nil, fmt.Errorf("invalid pageProps structure")
-	}
-
+func (pp *PackageParser) extractQuestions(pack map[string]interface{}) ([]map[string]interface{}, error) {
 	var allQuestions []map[string]interface{}
 
-	// Try to get from pack.tours structure first
-	if packInterface, exists := pagePropsPack["pack"]; exists {
-		pack, ok := packInterface.(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("invalid pack structure")
-		}
+	toursInterface, ok := pack["tours"]
+	if !ok {
+		return nil, fmt.Errorf("no tours found in pack")
+	}
 
-		toursInterface, ok := pack["tours"]
-		if !ok {
-			return nil, fmt.Errorf("no tours found in pack")
-		}
+	tours, ok := toursInterface.([]interface{})
+	if !ok {
+		return nil, fmt.Errorf("invalid tours structure")
+	}
 
-		tours, ok := toursInterface.([]interface{})
-		if !ok {
-			return nil, fmt.Errorf("invalid tours structure")
-		}
-
-		// Collect questions from all tours
-		for _, tourInterface := range tours {
-			tour, ok := tourInterface.(map[string]interface{})
-			if !ok {
-				continue
-			}
-
-			questionsInterface, ok := tour["questions"]
-			if !ok {
-				continue
-			}
-
-			questions, ok := questionsInterface.([]interface{})
-			if !ok {
-				continue
-			}
-
-			for _, questionInterface := range questions {
-				questionDict, ok := questionInterface.(map[string]interface{})
-				if ok {
-					allQuestions = append(allQuestions, questionDict)
-				}
-			}
-		}
-	} else if tourInterface, exists := pagePropsPack["tour"]; exists {
-		// Try to get from direct tour structure
+	for _, tourInterface := range tours {
 		tour, ok := tourInterface.(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("invalid tour structure")
+			continue
 		}
 
 		questionsInterface, ok := tour["questions"]
 		if !ok {
-			return nil, fmt.Errorf("no questions found in tour")
+			continue
 		}
 
 		questions, ok := questionsInterface.([]interface{})
 		if !ok {
-			return nil, fmt.Errorf("invalid questions structure")
+			continue
 		}
 
 		for _, questionInterface := range questions {
@@ -151,9 +119,37 @@ func (pp *PackageParser) extractQuestions(props map[string]interface{}) ([]map[s
 				allQuestions = append(allQuestions, questionDict)
 			}
 		}
-	} else {
-		return nil, fmt.Errorf("no pack or tour data found")
 	}
+
+	// Try to get from pack.tours structure
+	// if packInterface, exists := pagePropsPack["pack"]; exists {
+
+	// } else if tourInterface, exists := pagePropsPack["tour"]; exists {
+	// 	// Try to get from direct tour structure
+	// 	tour, ok := tourInterface.(map[string]interface{})
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("invalid tour structure")
+	// 	}
+
+	// 	questionsInterface, ok := tour["questions"]
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("no questions found in tour")
+	// 	}
+
+	// 	questions, ok := questionsInterface.([]interface{})
+	// 	if !ok {
+	// 		return nil, fmt.Errorf("invalid questions structure")
+	// 	}
+
+	// 	for _, questionInterface := range questions {
+	// 		questionDict, ok := questionInterface.(map[string]interface{})
+	// 		if ok {
+	// 			allQuestions = append(allQuestions, questionDict)
+	// 		}
+	// 	}
+	// } else {
+	// 	return nil, fmt.Errorf("no pack or tour data found")
+	// }
 
 	return allQuestions, nil
 }
