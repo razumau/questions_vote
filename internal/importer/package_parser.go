@@ -62,10 +62,6 @@ func (pp *PackageParser) ImportPackage() error {
 	log.Printf("Found %d questions in package %d", len(questions), pp.PackageID)
 
 	for i, questionDict := range questions {
-		if i%50 == 0 {
-			log.Printf("Processing question %d/%d", i+1, len(questions))
-		}
-
 		question, err := models.BuildQuestionFromDict(questionDict, pp.PackageID)
 		if err != nil {
 			log.Printf("Failed to build question %d: %v", i, err)
