@@ -219,6 +219,29 @@ func BuildQuestionFromDict(questionDict map[string]interface{}, packageID int) (
 	}, nil
 }
 
+// GetQuestionIDsFromPackage returns question IDs for a specific package
+func (r *QuestionRepository) GetQuestionIDsFromPackage(packageID int) ([]int, error) {
+	query := `SELECT id FROM questions WHERE package_id = ?`
+
+	rows, err := r.db.Query(query, packageID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query questions: %w", err)
+	}
+	defer rows.Close()
+
+	var questionIDs []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan question ID: %w", err)
+		}
+		questionIDs = append(questionIDs, id)
+	}
+
+	return questionIDs, rows.Err()
+}
+
 // Helper function to join strings
 func joinStrings(strs []string, sep string) string {
 	if len(strs) == 0 {

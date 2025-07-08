@@ -119,3 +119,37 @@ func (r *TournamentRepository) StartTournament(title string) error {
 	}
 	return nil
 }
+
+// Create inserts a new tournament into the database
+func (r *TournamentRepository) Create(tournament *Tournament) (int, error) {
+	query := `
+		INSERT INTO tournaments (title, initial_k, minimum_k, std_dev_multiplier, 
+		                        initial_phase_matches, transition_phase_matches, top_n, 
+		                        band_size, questions_count, state)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
+	`
+	
+	result, err := r.db.Exec(query, tournament.Name, tournament.InitialK, tournament.MinimumK,
+		tournament.StdDevMultiplier, tournament.InitialPhaseMatches, tournament.TransitionPhaseMatches,
+		tournament.TopN, tournament.BandSize)
+	if err != nil {
+		return 0, fmt.Errorf("failed to insert tournament: %w", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get tournament ID: %w", err)
+	}
+
+	return int(id), nil
+}
+
+// UpdateQuestionsCount updates the questions count for a tournament
+func (r *TournamentRepository) UpdateQuestionsCount(tournamentID, count int) error {
+	query := `UPDATE tournaments SET questions_count = ? WHERE id = ?`
+	_, err := r.db.Exec(query, count, tournamentID)
+	if err != nil {
+		return fmt.Errorf("failed to update tournament questions count: %w", err)
+	}
+	return nil
+}

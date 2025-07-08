@@ -87,7 +87,7 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	}
 
 	tournamentRepo := models.NewTournamentRepository()
-	tournamentID, err := createTournament(tournamentRepo, tournament)
+	tournamentID, err := tournamentRepo.Create(tournament)
 	if err != nil {
 		return fmt.Errorf("failed to create tournament: %w", err)
 	}
@@ -95,7 +95,7 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	log.Printf("Tournament created with ID: %d", tournamentID)
 
 	packageRepo := models.NewPackageRepository()
-	packages, err := getPackagesByDateRange(packageRepo, earliestDate, lastDate)
+	packages, err := packageRepo.GetPackagesByDateRange(earliestDate, lastDate)
 	if err != nil {
 		return fmt.Errorf("failed to get packages: %w", err)
 	}
@@ -111,7 +111,7 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	var allQuestionIDs []int
 
 	for _, pkg := range packages {
-		questionIDs, err := getQuestionIDsFromPackage(questionRepo, pkg.GotQuestionsID)
+		questionIDs, err := questionRepo.GetQuestionIDsFromPackage(pkg.GotQuestionsID)
 		if err != nil {
 			log.Printf("Warning: failed to get questions from package %d (%s): %v", pkg.GotQuestionsID, pkg.Title, err)
 			continue
@@ -132,7 +132,7 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 		return fmt.Errorf("failed to create tournament questions: %w", err)
 	}
 
-	err = updateTournamentQuestionsCount(tournamentRepo, tournamentID, len(allQuestionIDs))
+	err = tournamentRepo.UpdateQuestionsCount(tournamentID, len(allQuestionIDs))
 	if err != nil {
 		return fmt.Errorf("failed to update tournament questions count: %w", err)
 	}
@@ -141,92 +141,3 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	return nil
 }
 
-func createTournament(repo *models.TournamentRepository, tournament *models.Tournament) (int, error) {
-	// Note: This function needs to be implemented in tournament.go
-	// For now, we'll do a direct database insert
-	query := `
-		INSERT INTO tournaments (title, initial_k, minimum_k, std_dev_multiplier, 
-		                        initial_phase_matches, transition_phase_matches, top_n, 
-		                        band_size, questions_count, state)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
-	`
-
-	result, err := db.GetDB().Exec(query, tournament.Name, tournament.InitialK, tournament.MinimumK,
-		tournament.StdDevMultiplier, tournament.InitialPhaseMatches, tournament.TransitionPhaseMatches,
-		tournament.TopN, tournament.BandSize)
-	if err != nil {
-		return 0, fmt.Errorf("failed to insert tournament: %w", err)
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, fmt.Errorf("failed to get tournament ID: %w", err)
-	}
-
-	return int(id), nil
-}
-
-func getPackagesByDateRange(repo *models.PackageRepository, startDate, endDate time.Time) ([]*models.Package, error) {
-	// This function needs to be implemented in package.go
-	// For now, we'll do a direct database query
-	query := `
-		SELECT id, gotquestions_id, title, start_date, end_date, questions_count
-		FROM packages 
-		WHERE start_date >= ? AND start_date <= ?
-		ORDER BY start_date
-	`
-
-	rows, err := db.GetDB().Query(query, startDate, endDate)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query packages by date range: %w", err)
-	}
-	defer rows.Close()
-
-	var packages []*models.Package
-	for rows.Next() {
-		pkg := &models.Package{}
-		err := rows.Scan(
-			&pkg.ID, &pkg.GotQuestionsID, &pkg.Title,
-			&pkg.StartDate, &pkg.EndDate, &pkg.QuestionsCount,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan package: %w", err)
-		}
-		packages = append(packages, pkg)
-	}
-
-	return packages, rows.Err()
-}
-
-func getQuestionIDsFromPackage(repo *models.QuestionRepository, packageID int) ([]int, error) {
-	// This function needs to be implemented in question.go
-	// For now, we'll do a direct database query
-	query := `SELECT id FROM questions WHERE package_id = ?`
-
-	rows, err := db.GetDB().Query(query, packageID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to query questions: %w", err)
-	}
-	defer rows.Close()
-
-	var questionIDs []int
-	for rows.Next() {
-		var id int
-		err := rows.Scan(&id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan question ID: %w", err)
-		}
-		questionIDs = append(questionIDs, id)
-	}
-
-	return questionIDs, rows.Err()
-}
-
-func updateTournamentQuestionsCount(repo *models.TournamentRepository, tournamentID, count int) error {
-	query := `UPDATE tournaments SET questions_count = ? WHERE id = ?`
-	_, err := db.GetDB().Exec(query, count, tournamentID)
-	if err != nil {
-		return fmt.Errorf("failed to update tournament questions count: %w", err)
-	}
-	return nil
-}

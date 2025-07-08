@@ -186,3 +186,34 @@ func (r *PackageRepository) GetAllPackages() ([]*Package, error) {
 
 	return packages, rows.Err()
 }
+
+// GetPackagesByDateRange returns packages with start_date between the specified dates
+func (r *PackageRepository) GetPackagesByDateRange(startDate, endDate time.Time) ([]*Package, error) {
+	query := `
+		SELECT id, gotquestions_id, title, start_date, end_date, questions_count
+		FROM packages 
+		WHERE start_date >= ? AND start_date <= ?
+		ORDER BY start_date
+	`
+
+	rows, err := r.db.Query(query, startDate, endDate)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query packages by date range: %w", err)
+	}
+	defer rows.Close()
+
+	var packages []*Package
+	for rows.Next() {
+		pkg := &Package{}
+		err := rows.Scan(
+			&pkg.ID, &pkg.GotQuestionsID, &pkg.Title,
+			&pkg.StartDate, &pkg.EndDate, &pkg.QuestionsCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan package: %w", err)
+		}
+		packages = append(packages, pkg)
+	}
+
+	return packages, rows.Err()
+}
