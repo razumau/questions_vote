@@ -40,7 +40,6 @@ func NewBotHandler() (*BotHandler, error) {
 	}, nil
 }
 
-
 // GetQuestionsCount returns the total number of questions
 func (h *BotHandler) GetQuestionsCount() (int, error) {
 	count, err := h.questionService.GetQuestionsCount()
@@ -56,29 +55,29 @@ func (h *BotHandler) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to get updates: %w", err)
 	}
-	
+
 	log.Println("Bot is running...")
-	
-	// Process updates
+
 	for update := range updates {
 		go h.processUpdate(update)
 	}
-	
+
 	return nil
 }
 
 // processUpdate processes a single update
 func (h *BotHandler) processUpdate(update telego.Update) {
 	if update.Message != nil {
-		if update.Message.Text == "/start" {
+		switch update.Message.Text {
+		case "/start":
 			h.handleStart(h.bot, update)
-		} else if update.Message.Text == "/vote" {
+		case "/vote":
 			h.handleVote(h.bot, update)
 		}
 	} else if update.CallbackQuery != nil {
-		if update.CallbackQuery.Data != "" && 
-		   len(update.CallbackQuery.Data) > 5 && 
-		   update.CallbackQuery.Data[:5] == "vote_" {
+		if update.CallbackQuery.Data != "" &&
+			len(update.CallbackQuery.Data) > 5 &&
+			update.CallbackQuery.Data[:5] == "vote_" {
 			h.handleCallback(h.bot, update)
 		}
 	}

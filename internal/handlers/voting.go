@@ -18,41 +18,38 @@ func (h *BotHandler) sendVoteQuestions(chatID int64) error {
 	if err != nil {
 		return fmt.Errorf("failed to get questions: %w", err)
 	}
-	
+
 	if len(questions) < 2 {
 		return fmt.Errorf("not enough questions available")
 	}
-	
+
 	q1, q2 := questions[0], questions[1]
-	
-	// Send first question
+
 	err = h.sendQuestion(chatID, q1, 1)
 	if err != nil {
 		return fmt.Errorf("failed to send first question: %w", err)
 	}
-	
-	// Send second question
+
 	err = h.sendQuestion(chatID, q2, 2)
 	if err != nil {
 		return fmt.Errorf("failed to send second question: %w", err)
 	}
-	
+
 	// Send voting keyboard
 	keyboard := h.createVoteKeyboard(q1.ID, q2.ID)
 	h.rateLimiter.Record(chatID)
-	
+
 	_, err = h.bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID:      tu.ID(chatID),
 		Text:        "Какой вопрос лучше?",
 		ReplyMarkup: keyboard,
 	})
-	
+
 	return err
 }
 
 // sendQuestion sends a single formatted question
 func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, number int) error {
-	// Send handout image if exists
 	if question.HandoutImg != "" {
 		_, err := h.bot.SendPhoto(context.Background(), &telego.SendPhotoParams{
 			ChatID: tu.ID(chatID),
@@ -62,8 +59,7 @@ func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, numbe
 			log.Printf("Failed to send handout image: %v", err)
 		}
 	}
-	
-	// Format and send question text
+
 	questionText := h.formatQuestion(question, number)
 	_, err := h.bot.SendMessage(context.Background(), &telego.SendMessageParams{
 		ChatID:    tu.ID(chatID),
@@ -73,7 +69,7 @@ func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, numbe
 			IsDisabled: true,
 		},
 	})
-	
+
 	return err
 }
 
@@ -104,62 +100,60 @@ func (h *BotHandler) createVoteKeyboard(q1ID, q2ID int) *telego.InlineKeyboardMa
 // handleCallback handles button callback queries
 func (h *BotHandler) handleCallback(bot *telego.Bot, update telego.Update) {
 	query := update.CallbackQuery
-	
+
 	// Parse callback data: "vote_q1id_q2id_choice"
 	parts := strings.Split(query.Data, "_")
 	if len(parts) != 4 {
 		log.Printf("Invalid callback data: %s", query.Data)
 		return
 	}
-	
+
 	q1ID, err := strconv.Atoi(parts[1])
 	if err != nil {
 		log.Printf("Invalid q1ID: %s", parts[1])
 		return
 	}
-	
+
 	q2ID, err := strconv.Atoi(parts[2])
 	if err != nil {
 		log.Printf("Invalid q2ID: %s", parts[2])
 		return
 	}
-	
+
 	choice, err := strconv.Atoi(parts[3])
 	if err != nil {
 		log.Printf("Invalid choice: %s", parts[3])
 		return
 	}
-	
-	// Determine selected question ID
+
 	var selectedID *int
-	if choice == 1 {
+	switch choice {
+	case 1:
 		selectedID = &q1ID
-	} else if choice == 2 {
+	case 2:
 		selectedID = &q2ID
 	}
 	// choice == 0 means skip (selectedID remains nil)
-	
+
 	// Save the vote
 	err = h.voteService.SaveVote(query.From.ID, q1ID, q2ID, selectedID)
 	if err != nil {
 		log.Printf("Failed to save vote: %v", err)
 	}
-	
-	// Send confirmation and stats
+
 	response := h.getConfirmationMessage(q1ID, q2ID, selectedID)
 	if selectedID != nil {
 		statsMessage := h.getQuestionStatsMessage(q1ID, q2ID, selectedID)
 		response += " " + statsMessage
 	}
-	
-	// Answer callback and edit message
+
 	err = bot.AnswerCallbackQuery(context.Background(), &telego.AnswerCallbackQueryParams{
 		CallbackQueryID: query.ID,
 	})
 	if err != nil {
 		log.Printf("Failed to answer callback query: %v", err)
 	}
-	
+
 	_, err = bot.EditMessageText(context.Background(), &telego.EditMessageTextParams{
 		ChatID:    tu.ID(query.Message.GetChat().ID),
 		MessageID: query.Message.GetMessageID(),
@@ -168,13 +162,11 @@ func (h *BotHandler) handleCallback(bot *telego.Bot, update telego.Update) {
 	if err != nil {
 		log.Printf("Failed to edit message: %v", err)
 	}
-	
-	// Send next vote
+
 	chatID := query.Message.GetChat().ID
 	err = h.sendVoteQuestions(chatID)
 	if err != nil {
 		log.Printf("Failed to send next vote questions: %v", err)
-		// Send error message to user
 		_, sendErr := bot.SendMessage(context.Background(), &telego.SendMessageParams{
 			ChatID: tu.ID(chatID),
 			Text:   "Произошла ошибка при получении следующих вопросов. Попробуйте команду /vote снова.",

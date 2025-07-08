@@ -196,12 +196,10 @@ func (pp *PackageParser) insertQuestion(question *models.Question) error {
 		return fmt.Errorf("failed to get question ID: %w", err)
 	}
 
-	// Insert image if present
 	if question.HandoutImg != "" {
 		err = pp.insertImage(int(questionID), question.HandoutImg)
 		if err != nil {
 			log.Printf("Failed to insert image for question %d: %v", questionID, err)
-			// Don't fail the whole question insertion for image issues
 		}
 	}
 

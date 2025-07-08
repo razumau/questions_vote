@@ -22,29 +22,26 @@ func NewQuestionService() *QuestionService {
 
 // GetQuestions returns a pair of questions for voting using ELO selection
 func (s *QuestionService) GetQuestions() ([]*models.Question, error) {
-	// Get the active tournament
 	tournament, err := s.tournamentRepo.FindActiveTournament()
 	if err != nil {
 		return nil, fmt.Errorf("failed to find active tournament: %w", err)
 	}
-	
-	// Use ELO system to select question pair
+
 	eloSystem := elo.New(tournament)
 	q1ID, q2ID, err := eloSystem.SelectPair()
 	if err != nil {
 		return nil, fmt.Errorf("failed to select question pair: %w", err)
 	}
-	
-	// Get the actual questions from the database
+
 	questions, err := s.questionRepo.FindByIDs([]int{q1ID, q2ID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to find questions by IDs %v: %w", []int{q1ID, q2ID}, err)
 	}
-	
+
 	if len(questions) != 2 {
 		return nil, fmt.Errorf("expected 2 questions, got %d", len(questions))
 	}
-	
+
 	return questions, nil
 }
 

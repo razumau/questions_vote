@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-// Question represents a trivia question
+// Question represents a question
 type Question struct {
 	ID             int      `json:"id"`
 	GotQuestionsID int      `json:"gotquestions_id,omitempty"`
