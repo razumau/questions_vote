@@ -23,7 +23,7 @@ func ExtractNextJsDataFromURL(url string) (any, error) {
 
 	defer response.Body.Close()
 
-	script, found := findScriptWithSubstring(response, "questions")
+	script, found := findScriptWithSubstrings(response, []string{"questions", "pack"})
 	if !found {
 		return nil, fmt.Errorf("failed to find <script> with questions")
 	}
@@ -63,8 +63,8 @@ func extractJSONFromNextJSPush(line string) (string, error) {
 	return jsonStr, nil
 }
 
-// findScriptWithSubstring searches for a script element whose content starts with the given prefix
-func findScriptWithSubstring(response *http.Response, substring string) (string, bool) {
+// findScriptWithSubstrings searches for a script element whose content includes all the given substrings
+func findScriptWithSubstrings(response *http.Response, substrings []string) (string, bool) {
 	doc, err := goquery.NewDocumentFromReader(response.Body)
 	if err != nil {
 		return "", false
@@ -76,7 +76,15 @@ func findScriptWithSubstring(response *http.Response, substring string) (string,
 	doc.Find("script").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		scriptContent := strings.TrimSpace(s.Text())
 
-		if strings.Contains(scriptContent, substring) {
+		allPresent := true
+		for _, substring := range substrings {
+			if !strings.Contains(scriptContent, substring) {
+				allPresent = false
+				break
+			}
+		}
+
+		if allPresent {
 			result = scriptContent
 			found = true
 			return false
