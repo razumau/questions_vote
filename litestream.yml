@@ -1,6 +1,6 @@
 access-key-id: ${AWS_ACCESS_KEY_ID}
 secret-access-key: ${AWS_SECRET_ACCESS_KEY}
-exec: python /app/bot.py
+exec: /app/bin/bot
 logging:
   level: info
   type: text
