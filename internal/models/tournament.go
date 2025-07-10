@@ -27,13 +27,13 @@ func (r *TournamentRepository) FindActiveTournament() (*Tournament, error) {
 		FROM tournaments 
 		WHERE state = 1
 	`
-	
+
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active tournament: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var tournaments []*Tournament
 	for rows.Next() {
 		t := &Tournament{}
@@ -54,19 +54,19 @@ func (r *TournamentRepository) FindActiveTournament() (*Tournament, error) {
 		}
 		tournaments = append(tournaments, t)
 	}
-	
+
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating over tournaments: %w", err)
 	}
-	
+
 	if len(tournaments) == 0 {
 		return nil, fmt.Errorf("no active tournament found")
 	}
-	
+
 	if len(tournaments) > 1 {
 		return nil, fmt.Errorf("found %d active tournaments, expected exactly 1", len(tournaments))
 	}
-	
+
 	return tournaments[0], nil
 }
 
@@ -79,13 +79,13 @@ func (r *TournamentRepository) ListActiveTournaments() ([]*Tournament, error) {
 		FROM tournaments 
 		WHERE state = 1
 	`
-	
+
 	rows, err := r.db.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active tournaments: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var tournaments []*Tournament
 	for rows.Next() {
 		t := &Tournament{}
@@ -106,7 +106,7 @@ func (r *TournamentRepository) ListActiveTournaments() ([]*Tournament, error) {
 		}
 		tournaments = append(tournaments, t)
 	}
-	
+
 	return tournaments, rows.Err()
 }
 
@@ -128,7 +128,7 @@ func (r *TournamentRepository) Create(tournament *Tournament) (int, error) {
 		                        band_size, questions_count, state)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 0)
 	`
-	
+
 	result, err := r.db.Exec(query, tournament.Name, tournament.InitialK, tournament.MinimumK,
 		tournament.StdDevMultiplier, tournament.InitialPhaseMatches, tournament.TransitionPhaseMatches,
 		tournament.TopN, tournament.BandSize)

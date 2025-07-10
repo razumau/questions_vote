@@ -12,12 +12,12 @@ func TestFindKeyInData(t *testing.T) {
 			"age":   30,
 			"email": "john@example.com",
 		}
-		
+
 		result, err := FindKeyInData(data, "name")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "John" {
 			t.Errorf("Expected 'John', got %v", result)
 		}
@@ -33,12 +33,12 @@ func TestFindKeyInData(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "name")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "Jane" {
 			t.Errorf("Expected 'Jane', got %v", result)
 		}
@@ -56,12 +56,12 @@ func TestFindKeyInData(t *testing.T) {
 				"name": "Bob",
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "name")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "Bob" {
 			t.Errorf("Expected 'Bob', got %v", result)
 		}
@@ -85,12 +85,12 @@ func TestFindKeyInData(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "email")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "alice@example.com" {
 			t.Errorf("Expected 'alice@example.com', got %v", result)
 		}
@@ -102,12 +102,12 @@ func TestFindKeyInData(t *testing.T) {
 			"name": "John",
 			"age":  30,
 		}
-		
+
 		_, err := FindKeyInData(data, "nonexistent")
 		if err == nil {
 			t.Error("Expected error for non-existent key")
 		}
-		
+
 		expectedMsg := "key 'nonexistent' not found in data"
 		if err.Error() != expectedMsg {
 			t.Errorf("Expected error message '%s', got '%s'", expectedMsg, err.Error())
@@ -117,7 +117,7 @@ func TestFindKeyInData(t *testing.T) {
 	// Test case 6: Empty map
 	t.Run("empty map", func(t *testing.T) {
 		data := map[string]any{}
-		
+
 		_, err := FindKeyInData(data, "anything")
 		if err == nil {
 			t.Error("Expected error for empty map")
@@ -127,7 +127,7 @@ func TestFindKeyInData(t *testing.T) {
 	// Test case 7: Empty array
 	t.Run("empty array", func(t *testing.T) {
 		data := []any{}
-		
+
 		_, err := FindKeyInData(data, "anything")
 		if err == nil {
 			t.Error("Expected error for empty array")
@@ -137,7 +137,7 @@ func TestFindKeyInData(t *testing.T) {
 	// Test case 8: Primitive value (should return error)
 	t.Run("primitive value", func(t *testing.T) {
 		data := "just a string"
-		
+
 		_, err := FindKeyInData(data, "anything")
 		if err == nil {
 			t.Error("Expected error for primitive value")
@@ -147,7 +147,7 @@ func TestFindKeyInData(t *testing.T) {
 	// Test case 9: Nil value
 	t.Run("nil value", func(t *testing.T) {
 		var data any = nil
-		
+
 		_, err := FindKeyInData(data, "anything")
 		if err == nil {
 			t.Error("Expected error for nil value")
@@ -157,7 +157,7 @@ func TestFindKeyInData(t *testing.T) {
 	// Test case 10: Array of primitive values
 	t.Run("array of primitive values", func(t *testing.T) {
 		data := []any{1, 2, 3, "string", true}
-		
+
 		_, err := FindKeyInData(data, "anything")
 		if err == nil {
 			t.Error("Expected error for array of primitive values")
@@ -178,12 +178,12 @@ func TestFindKeyInData(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "target")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "first" {
 			t.Errorf("Expected 'first', got %v", result)
 		}
@@ -204,12 +204,12 @@ func TestFindKeyInData(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "deep_key")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "found_it" {
 			t.Errorf("Expected 'found_it', got %v", result)
 		}
@@ -229,12 +229,12 @@ func TestFindKeyInData(t *testing.T) {
 				},
 			},
 		}
-		
+
 		result, err := FindKeyInData(data, "deeper_key")
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
-		
+
 		if result != "deeper_value" {
 			t.Errorf("Expected 'deeper_value', got %v", result)
 		}
@@ -253,7 +253,7 @@ func TestFindKeyInData(t *testing.T) {
 				"nested": "value",
 			},
 		}
-		
+
 		tests := []struct {
 			key      string
 			expected any
@@ -264,13 +264,13 @@ func TestFindKeyInData(t *testing.T) {
 			{"bool_val", true},
 			{"null_val", nil},
 		}
-		
+
 		for _, test := range tests {
 			result, err := FindKeyInData(data, test.key)
 			if err != nil {
 				t.Errorf("Expected no error for key %s, got %v", test.key, err)
 			}
-			
+
 			if result != test.expected {
 				t.Errorf("For key %s, expected %v, got %v", test.key, test.expected, result)
 			}

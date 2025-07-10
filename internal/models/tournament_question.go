@@ -66,20 +66,20 @@ func (r *TournamentQuestionRepository) GetRandomQuestion(tournamentID int, minRa
 		AND rating BETWEEN ? AND ? 
 		AND matches <= ?
 	`
-	
+
 	var count int
 	err := r.db.QueryRow(countQuery, tournamentID, minRating, maxRating, maxMatches).Scan(&count)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count questions: %w", err)
 	}
-	
+
 	if count == 0 {
 		return nil, fmt.Errorf("no questions found matching criteria")
 	}
-	
+
 	// Get a random offset
 	offset := rand.Intn(count)
-	
+
 	// Get the question at that offset
 	query := `
 		SELECT question_id, rating, matches, wins
@@ -89,7 +89,7 @@ func (r *TournamentQuestionRepository) GetRandomQuestion(tournamentID int, minRa
 		AND matches <= ?
 		LIMIT 1 OFFSET ?
 	`
-	
+
 	tq := &TournamentQuestion{TournamentID: tournamentID}
 	err = r.db.QueryRow(query, tournamentID, minRating, maxRating, maxMatches, offset).Scan(
 		&tq.QuestionID, &tq.Rating, &tq.Matches, &tq.Wins,
@@ -97,7 +97,7 @@ func (r *TournamentQuestionRepository) GetRandomQuestion(tournamentID int, minRa
 	if err != nil {
 		return nil, fmt.Errorf("failed to get random question: %w", err)
 	}
-	
+
 	return tq, nil
 }
 
@@ -108,12 +108,12 @@ func (r *TournamentQuestionRepository) Find(tournamentID, questionID int) (*Tour
 		FROM tournament_questions
 		WHERE tournament_id = ? AND question_id = ?
 	`
-	
+
 	tq := &TournamentQuestion{
 		TournamentID: tournamentID,
 		QuestionID:   questionID,
 	}
-	
+
 	err := r.db.QueryRow(query, tournamentID, questionID).Scan(
 		&tq.Rating, &tq.Matches, &tq.Wins,
 	)
@@ -123,7 +123,7 @@ func (r *TournamentQuestionRepository) Find(tournamentID, questionID int) (*Tour
 		}
 		return nil, fmt.Errorf("failed to find tournament question: %w", err)
 	}
-	
+
 	return tq, nil
 }
 
@@ -134,12 +134,12 @@ func (r *TournamentQuestionRepository) Save(tq *TournamentQuestion) error {
 		SET rating = ?, matches = ?, wins = ?
 		WHERE tournament_id = ? AND question_id = ?
 	`
-	
+
 	_, err := r.db.Exec(query, tq.Rating, tq.Matches, tq.Wins, tq.TournamentID, tq.QuestionID)
 	if err != nil {
 		return fmt.Errorf("failed to save tournament question: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -150,13 +150,13 @@ func (r *TournamentQuestionRepository) CountUnqualifiedQuestions(tournamentID, q
 		FROM tournament_questions
 		WHERE tournament_id = ? AND matches < ?
 	`
-	
+
 	var count int
 	err := r.db.QueryRow(query, tournamentID, qualificationCutoff).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count unqualified questions: %w", err)
 	}
-	
+
 	return count, nil
 }
 
@@ -170,14 +170,14 @@ func (r *TournamentQuestionRepository) GetStatsForQualified(tournamentID, initia
 		FROM tournament_questions
 		WHERE tournament_id = ? AND matches >= ?
 	`
-	
+
 	var count int
 	var sumRating, sumSquares float64
 	err := r.db.QueryRow(query, tournamentID, initialPhaseMatches).Scan(&count, &sumRating, &sumSquares)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get stats for qualified: %w", err)
 	}
-	
+
 	var stdDev float64
 	if count > 1 {
 		// Calculate standard deviation using the formula: sqrt((sum_squares - sum^2/n) / (n-1))
@@ -187,7 +187,7 @@ func (r *TournamentQuestionRepository) GetStatsForQualified(tournamentID, initia
 			stdDev = math.Sqrt(variance)
 		}
 	}
-	
+
 	return count, stdDev, nil
 }
 
@@ -200,13 +200,13 @@ func (r *TournamentQuestionRepository) GetRatingAtPosition(tournamentID, positio
 		ORDER BY rating DESC
 		LIMIT 1 OFFSET ?
 	`
-	
+
 	var rating float64
 	err := r.db.QueryRow(query, tournamentID, position).Scan(&rating)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get rating at position: %w", err)
 	}
-	
+
 	return rating, nil
 }
 
@@ -217,13 +217,13 @@ func (r *TournamentQuestionRepository) CountQuestionsAboveThreshold(tournamentID
 		FROM tournament_questions
 		WHERE tournament_id = ? AND rating >= ?
 	`
-	
+
 	var count int
 	err := r.db.QueryRow(query, tournamentID, threshold).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count questions above threshold: %w", err)
 	}
-	
+
 	return count, nil
 }
 
@@ -236,13 +236,13 @@ func (r *TournamentQuestionRepository) GetTopQuestions(tournamentID, n int) ([]*
 		ORDER BY rating DESC
 		LIMIT ?
 	`
-	
+
 	rows, err := r.db.Query(query, tournamentID, n)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get top questions: %w", err)
 	}
 	defer rows.Close()
-	
+
 	var questions []*TournamentQuestion
 	for rows.Next() {
 		tq := &TournamentQuestion{TournamentID: tournamentID}
@@ -252,7 +252,7 @@ func (r *TournamentQuestionRepository) GetTopQuestions(tournamentID, n int) ([]*
 		}
 		questions = append(questions, tq)
 	}
-	
+
 	return questions, rows.Err()
 }
 
@@ -263,13 +263,13 @@ func (r *TournamentQuestionRepository) GetMatchCounts(tournamentID int) (int, in
 		FROM tournament_questions
 		WHERE tournament_id = ?
 	`
-	
+
 	var totalMatches, totalWins int
 	err := r.db.QueryRow(query, tournamentID).Scan(&totalMatches, &totalWins)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get match counts: %w", err)
 	}
-	
+
 	return totalMatches, totalWins, nil
 }
 
@@ -282,13 +282,13 @@ func (r *TournamentQuestionRepository) GetRatingDistribution(tournamentID, binSi
 		GROUP BY bin
 		ORDER BY bin
 	`
-	
+
 	rows, err := r.db.Query(query, binSize, binSize, tournamentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rating distribution: %w", err)
 	}
 	defer rows.Close()
-	
+
 	distribution := make(map[int]int)
 	for rows.Next() {
 		var bin, count int
@@ -298,6 +298,6 @@ func (r *TournamentQuestionRepository) GetRatingDistribution(tournamentID, binSi
 		}
 		distribution[bin] = count
 	}
-	
+
 	return distribution, rows.Err()
 }

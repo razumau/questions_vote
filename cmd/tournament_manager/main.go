@@ -140,4 +140,3 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	log.Printf("Tournament '%s' created successfully with %d questions", title, len(allQuestionIDs))
 	return nil
 }
-

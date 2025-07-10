@@ -22,7 +22,7 @@ type ELO struct {
 	TransitionPhaseMatches int
 	TopN                   int
 	BandSize               int
-	
+
 	tournamentQuestionRepo *models.TournamentQuestionRepository
 }
 
@@ -45,7 +45,7 @@ func New(tournament *models.Tournament) *ELO {
 func (e *ELO) SelectPair() (int, int, error) {
 	mu.Lock()
 	defer mu.Unlock()
-	
+
 	return e.selectPairInternal()
 }
 
@@ -54,9 +54,9 @@ func (e *ELO) selectPairInternal() (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to count unqualified questions: %w", err)
 	}
-	
+
 	var first, second int
-	
+
 	if unqualifiedCount > 1 {
 		first, second, err = e.selectTwoUnqualified()
 	} else if unqualifiedCount == 1 {
@@ -68,45 +68,45 @@ func (e *ELO) selectPairInternal() (int, int, error) {
 	} else {
 		first, second, err = e.selectTwoQualified()
 	}
-	
+
 	if err != nil {
 		return 0, 0, err
 	}
-	
+
 	if first == second {
 		retries++
 		return e.selectPairInternal()
 	}
-	
+
 	return first, second, nil
 }
 
 // selectTwoUnqualified selects two unqualified questions
 func (e *ELO) selectTwoUnqualified() (int, int, error) {
 	maxMatches := e.InitialPhaseMatches - 1
-	
+
 	first, err := e.tournamentQuestionRepo.GetRandomQuestion(e.TournamentID, 0, math.MaxFloat64, maxMatches)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get first unqualified question: %w", err)
 	}
-	
+
 	second, err := e.tournamentQuestionRepo.GetRandomQuestion(e.TournamentID, 0, math.MaxFloat64, maxMatches)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get second unqualified question: %w", err)
 	}
-	
+
 	return first.QuestionID, second.QuestionID, nil
 }
 
 // selectUnqualified selects one unqualified question
 func (e *ELO) selectUnqualified() (int, error) {
 	maxMatches := e.InitialPhaseMatches - 1
-	
+
 	question, err := e.tournamentQuestionRepo.GetRandomQuestion(e.TournamentID, 0, math.MaxFloat64, maxMatches)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get unqualified question: %w", err)
 	}
-	
+
 	return question.QuestionID, nil
 }
 
@@ -116,7 +116,7 @@ func (e *ELO) selectAny() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to get any question: %w", err)
 	}
-	
+
 	return question.QuestionID, nil
 }
 
@@ -126,17 +126,17 @@ func (e *ELO) selectTwoQualified() (int, int, error) {
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to calculate threshold: %w", err)
 	}
-	
+
 	first, err := e.tournamentQuestionRepo.GetRandomQuestion(e.TournamentID, threshold, math.MaxFloat64, math.MaxInt32)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get first qualified question: %w", err)
 	}
-	
+
 	second, err := e.tournamentQuestionRepo.GetRandomQuestion(e.TournamentID, threshold, math.MaxFloat64, math.MaxInt32)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get second qualified question: %w", err)
 	}
-	
+
 	return first.QuestionID, second.QuestionID, nil
 }
 
@@ -157,43 +157,43 @@ func (e *ELO) RecordWinner(winnerID, loserID int) error {
 	if err != nil {
 		return fmt.Errorf("failed to find winner: %w", err)
 	}
-	
+
 	loser, err := e.tournamentQuestionRepo.Find(e.TournamentID, loserID)
 	if err != nil {
 		return fmt.Errorf("failed to find loser: %w", err)
 	}
-	
+
 	// Update match counts
 	winner.Matches++
 	loser.Matches++
 	winner.Wins++
-	
+
 	// Calculate expected winner probability
 	expectedWinner := 1.0 / (1.0 + math.Pow(10, (loser.Rating-winner.Rating)/400))
-	
+
 	// Calculate K-factors
 	winnerK := e.calculateKFactor(winner)
 	loserK := e.calculateKFactor(loser)
 	kFactor := (winnerK + loserK) / 2
-	
+
 	// Calculate rating change
 	ratingChange := kFactor * (1 - expectedWinner)
-	
+
 	// Update ratings
 	winner.Rating += ratingChange
 	loser.Rating -= ratingChange
-	
+
 	// Save changes
 	err = e.tournamentQuestionRepo.Save(winner)
 	if err != nil {
 		return fmt.Errorf("failed to save winner: %w", err)
 	}
-	
+
 	err = e.tournamentQuestionRepo.Save(loser)
 	if err != nil {
 		return fmt.Errorf("failed to save loser: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -208,16 +208,16 @@ func (e *ELO) CalculateThreshold() (float64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to get stats for qualified: %w", err)
 	}
-	
+
 	if ratingsCount < e.TopN {
 		return math.Inf(-1), nil
 	}
-	
+
 	topNThreshold, err := e.tournamentQuestionRepo.GetRatingAtPosition(e.TournamentID, e.TopN)
 	if err != nil {
 		return 0, fmt.Errorf("failed to get rating at position: %w", err)
 	}
-	
+
 	return topNThreshold - (e.StdDevMultiplier * stdDev), nil
 }
 
@@ -227,12 +227,12 @@ func (e *ELO) GetQuestionsStats(q1ID, q2ID int) ([]models.QuestionStats, error) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to find question 1: %w", err)
 	}
-	
+
 	q2, err := e.tournamentQuestionRepo.Find(e.TournamentID, q2ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find question 2: %w", err)
 	}
-	
+
 	return []models.QuestionStats{
 		{Wins: q1.Wins, Matches: q1.Matches},
 		{Wins: q2.Wins, Matches: q2.Matches},
@@ -244,40 +244,40 @@ func (e *ELO) GetStatistics() (map[string]interface{}, error) {
 	mu.Lock()
 	currentRetries := retries
 	mu.Unlock()
-	
+
 	threshold, err := e.CalculateThreshold()
 	if err != nil {
 		return nil, fmt.Errorf("failed to calculate threshold: %w", err)
 	}
-	
+
 	aboveThresholdCount, err := e.tournamentQuestionRepo.CountQuestionsAboveThreshold(e.TournamentID, threshold)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count questions above threshold: %w", err)
 	}
-	
+
 	ratingDistribution, err := e.tournamentQuestionRepo.GetRatingDistribution(e.TournamentID, 20)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rating distribution: %w", err)
 	}
-	
+
 	unqualifiedCount, err := e.tournamentQuestionRepo.CountUnqualifiedQuestions(e.TournamentID, e.InitialPhaseMatches)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count unqualified questions: %w", err)
 	}
-	
+
 	totalMatches, totalWins, err := e.tournamentQuestionRepo.GetMatchCounts(e.TournamentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get match counts: %w", err)
 	}
-	
+
 	return map[string]interface{}{
-		"current_threshold":  threshold,
-		"above_threshold":    aboveThresholdCount,
-		"unqualified":        unqualifiedCount,
-		"distribution":       ratingDistribution,
-		"retries":            currentRetries,
-		"total_matches":      totalMatches,
-		"total_wins":         totalWins,
+		"current_threshold": threshold,
+		"above_threshold":   aboveThresholdCount,
+		"unqualified":       unqualifiedCount,
+		"distribution":      ratingDistribution,
+		"retries":           currentRetries,
+		"total_matches":     totalMatches,
+		"total_wins":        totalWins,
 	}, nil
 }
 
