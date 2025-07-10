@@ -95,11 +95,6 @@ func findScriptWithSubstrings(response *http.Response, substrings []string) (str
 	return result, found
 }
 
-func ExtractNextPropsFromURL(url string) (map[string]any, error) {
-	var propsData map[string]any
-	return propsData, nil
-}
-
 // FindKeyInData recursively searches for the key in nested data
 func FindKeyInData(data any, key string) (any, error) {
 	switch v := data.(type) {
