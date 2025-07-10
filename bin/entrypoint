@@ -5,4 +5,4 @@ if [ ! -f /app/questions.db ]; then
   echo "Restored database from backup"
 fi
 
-litestream replicate
+litestream replicate -exec "/app/questions-vote"

@@ -1,22 +1,39 @@
-# Python-generated files
-__pycache__/
-*.py[oc]
-build/
+# Go binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
 dist/
-wheels/
-*.egg-info
+
+# Go test files
+*.test
+*.out
+go.work
+
 
 # Virtual environments
 .venv
 .env
 
+# IDE and OS files
 .idea
+.vscode/
 .DS_Store
+*.swp
+*.swo
+
+# Project files
 test.docx
 test.html
 test.json
 list.json
 
+# Database files
 questions.db
+*.sqlite
+*.sqlite3
 *.prof
-ipython_profiles/profile_main/history.sqlite
+
+.claude
