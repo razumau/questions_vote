@@ -135,7 +135,6 @@ func (h *BotHandler) handleCallback(bot *telego.Bot, update telego.Update) {
 	}
 	// choice == 0 means skip (selectedID remains nil)
 
-	// Save the vote
 	err = h.voteService.SaveVote(query.From.ID, q1ID, q2ID, selectedID)
 	if err != nil {
 		log.Printf("Failed to save vote: %v", err)

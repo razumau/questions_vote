@@ -35,7 +35,11 @@ func (s *VoteService) SaveVote(userID int64, question1ID, question2ID int, selec
 		return err
 	}
 
-	log.Printf("Saving vote: user=%d, q1=%d, q2=%d, selected=%d", userID, question1ID, question2ID, *selectedID)
+	if selectedID != nil {
+		log.Printf("Saving vote: user=%d, q1=%d, q2=%d, selected=%d", userID, question1ID, question2ID, *selectedID)
+	} else {
+		log.Printf("Saving vote: user=%d, q1=%d, q2=%d, selected=nil", userID, question1ID, question2ID)
+	}
 
 	if selectedID != nil {
 		var loserID int
