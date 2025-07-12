@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"questions-vote/internal/db"
+	"strings"
 )
 
 // QuestionRepository handles question database operations
@@ -23,10 +24,8 @@ func (r *QuestionRepository) FindByIDs(ids []int) ([]*Question, error) {
 	if len(ids) == 0 {
 		return []*Question{}, nil
 	}
-
-	// Build placeholders for the IN clause
 	placeholders := make([]string, len(ids))
-	args := make([]interface{}, len(ids))
+	args := make([]any, len(ids))
 	for i, id := range ids {
 		placeholders[i] = "?"
 		args[i] = id
@@ -38,20 +37,7 @@ func (r *QuestionRepository) FindByIDs(ids []int) ([]*Question, error) {
 		FROM questions q
 		LEFT JOIN images i ON q.id = i.question_id
 		WHERE q.id IN (%s)
-	`, fmt.Sprintf("%s", placeholders[0]))
-
-	for i := 1; i < len(placeholders); i++ {
-		query = fmt.Sprintf("%s,%s", query[:len(query)-1], placeholders[i]) + ")"
-	}
-
-	// Rebuild query properly
-	query = fmt.Sprintf(`
-		SELECT q.id, q.question, q.answer, q.comment, q.accepted_answer, 
-		       q.handout_str, q.source, i.data as image_data 
-		FROM questions q
-		LEFT JOIN images i ON q.id = i.question_id
-		WHERE q.id IN (%s)
-	`, joinStrings(placeholders, ","))
+	`, strings.Join(placeholders, ","))
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
@@ -93,7 +79,7 @@ func (r *QuestionRepository) FindByIDs(ids []int) ([]*Question, error) {
 
 // GetQuestionIDsForYear returns question IDs for a specific year
 func (r *QuestionRepository) GetQuestionIDsForYear(year int) ([]int, error) {
-	startTimestamp := int64(year * 365 * 24 * 3600) // Simplified timestamp calculation
+	startTimestamp := int64(year * 365 * 24 * 3600)
 	endTimestamp := int64((year + 1) * 365 * 24 * 3600)
 
 	query := `
@@ -156,7 +142,6 @@ func BuildQuestionFromDict(questionDict map[string]interface{}, packageID int) (
 		return nil, fmt.Errorf("invalid answer in question data")
 	}
 
-	// Optional fields with defaults
 	var zachet, comment, razdatkaText, razdatkaPic, source string
 	var complexity float64
 	var takenDown bool
@@ -240,20 +225,4 @@ func (r *QuestionRepository) GetQuestionIDsFromPackage(packageID int) ([]int, er
 	}
 
 	return questionIDs, rows.Err()
-}
-
-// Helper function to join strings
-func joinStrings(strs []string, sep string) string {
-	if len(strs) == 0 {
-		return ""
-	}
-	if len(strs) == 1 {
-		return strs[0]
-	}
-
-	result := strs[0]
-	for i := 1; i < len(strs); i++ {
-		result += sep + strs[i]
-	}
-	return result
 }
