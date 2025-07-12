@@ -153,3 +153,86 @@ func (r *TournamentRepository) UpdateQuestionsCount(tournamentID, count int) err
 	}
 	return nil
 }
+
+// ListAllTournaments returns all tournaments
+func (r *TournamentRepository) ListAllTournaments() ([]*Tournament, error) {
+	query := `
+		SELECT id, title, initial_k, minimum_k, std_dev_multiplier, 
+		       initial_phase_matches, transition_phase_matches, top_n, 
+		       questions_count, band_size, state
+		FROM tournaments 
+		ORDER BY id DESC
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query tournaments: %w", err)
+	}
+	defer rows.Close()
+
+	var tournaments []*Tournament
+	for rows.Next() {
+		t := &Tournament{}
+		var state int
+		err := rows.Scan(
+			&t.ID,
+			&t.Name,
+			&t.InitialK,
+			&t.MinimumK,
+			&t.StdDevMultiplier,
+			&t.InitialPhaseMatches,
+			&t.TransitionPhaseMatches,
+			&t.TopN,
+			&t.QuestionsCount,
+			&t.BandSize,
+			&state,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan tournament: %w", err)
+		}
+		t.Active = state == 1
+		tournaments = append(tournaments, t)
+	}
+
+	return tournaments, rows.Err()
+}
+
+// ActivateTournament activates a tournament by ID
+func (r *TournamentRepository) ActivateTournament(tournamentID int) error {
+	query := `UPDATE tournaments SET state = 1 WHERE id = ?`
+	result, err := r.db.Exec(query, tournamentID)
+	if err != nil {
+		return fmt.Errorf("failed to activate tournament: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("tournament with ID %d not found", tournamentID)
+	}
+
+	return nil
+}
+
+// DeactivateTournament deactivates a tournament by ID
+func (r *TournamentRepository) DeactivateTournament(tournamentID int) error {
+	query := `UPDATE tournaments SET state = 0 WHERE id = ?`
+	result, err := r.db.Exec(query, tournamentID)
+	if err != nil {
+		return fmt.Errorf("failed to deactivate tournament: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("tournament with ID %d not found", tournamentID)
+	}
+
+	return nil
+}

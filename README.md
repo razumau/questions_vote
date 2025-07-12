@@ -17,6 +17,7 @@ To build all binaries at once:
 go build -o bin/bot ./cmd/bot
 go build -o bin/admin ./cmd/admin
 go build -o bin/importer ./cmd/importer
+go build -o bin/tournament_manager ./cmd/tournament_manager
 ```
 
 ### Building Individual Binaries
@@ -37,6 +38,12 @@ go build -o bin/admin ./cmd/admin
 Tool for importing questions from external sources:
 ```bash
 go build -o bin/importer ./cmd/importer
+```
+
+#### Tournament Manager Binary
+Tool for managing tournaments:
+```bash
+go build -o bin/tournament_manager ./cmd/tournament_manager
 ```
 
 ### Dependencies
@@ -70,6 +77,21 @@ go mod download
 ./bin/importer -command=import-year -year=2022
 ```
 
+#### Running the Tournament Manager
+```bash
+# List all tournaments
+./bin/tournament_manager -command=list-tournaments
+
+# Create a new tournament
+./bin/tournament_manager -command=create-tournament -earliest-date=2023-01-01 -last-date=2023-12-31 -title="2023 Tournament"
+
+# Activate a tournament by ID
+./bin/tournament_manager -command=activate-tournament -id=1
+
+# Deactivate a tournament by ID
+./bin/tournament_manager -command=deactivate-tournament -id=1
+```
+
 ### Development
 
 For development, you can run directly with Go:
@@ -83,6 +105,9 @@ go run ./cmd/admin
 
 # Run importer
 go run ./cmd/importer -command=list-packages
+
+# Run tournament manager
+go run ./cmd/tournament_manager -command=list-tournaments
 ```
 
 ### Cross-compilation

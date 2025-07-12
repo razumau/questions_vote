@@ -7,15 +7,18 @@ import (
 	"os"
 	"questions-vote/internal/db"
 	"questions-vote/internal/models"
+	"strconv"
+	"strings"
 	"time"
 )
 
 func main() {
 	var (
-		command         = flag.String("command", "", "Command to run: create-tournament")
+		command         = flag.String("command", "", "Command to run: create-tournament, list-tournaments, activate-tournament, deactivate-tournament")
 		earliestDate    = flag.String("earliest-date", "", "Earliest package date (YYYY-MM-DD)")
 		lastDate        = flag.String("last-date", "", "Last package date (YYYY-MM-DD)")
 		tournamentTitle = flag.String("title", "", "Tournament title")
+		tournamentID    = flag.String("id", "", "Tournament ID")
 	)
 	flag.Parse()
 
@@ -36,6 +39,18 @@ func main() {
 			log.Fatal("earliest-date, last-date, and title are required for create-tournament command")
 		}
 		err = runCreateTournament(*earliestDate, *lastDate, *tournamentTitle)
+	case "list-tournaments":
+		err = runListTournaments()
+	case "activate-tournament":
+		if *tournamentID == "" {
+			log.Fatal("id is required for activate-tournament command")
+		}
+		err = runActivateTournament(*tournamentID)
+	case "deactivate-tournament":
+		if *tournamentID == "" {
+			log.Fatal("id is required for deactivate-tournament command")
+		}
+		err = runDeactivateTournament(*tournamentID)
 	default:
 		fmt.Printf("Unknown command: %s\n", *command)
 		printUsage()
@@ -54,8 +69,20 @@ func printUsage() {
 	fmt.Println("  tournament_manager -command=create-tournament -earliest-date=YYYY-MM-DD -last-date=YYYY-MM-DD -title=\"Tournament Name\"")
 	fmt.Println("    Creates a new tournament with questions from packages between the specified dates")
 	fmt.Println()
+	fmt.Println("  tournament_manager -command=list-tournaments")
+	fmt.Println("    Lists all tournaments with their status")
+	fmt.Println()
+	fmt.Println("  tournament_manager -command=activate-tournament -id=TOURNAMENT_ID")
+	fmt.Println("    Activates a tournament by ID")
+	fmt.Println()
+	fmt.Println("  tournament_manager -command=deactivate-tournament -id=TOURNAMENT_ID")
+	fmt.Println("    Deactivates a tournament by ID")
+	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  tournament_manager -command=create-tournament -earliest-date=2023-01-01 -last-date=2023-12-31 -title=\"2023 Tournament\"")
+	fmt.Println("  tournament_manager -command=list-tournaments")
+	fmt.Println("  tournament_manager -command=activate-tournament -id=1")
+	fmt.Println("  tournament_manager -command=deactivate-tournament -id=1")
 }
 
 func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
@@ -138,5 +165,62 @@ func runCreateTournament(earliestDateStr, lastDateStr, title string) error {
 	}
 
 	log.Printf("Tournament '%s' created successfully with %d questions", title, len(allQuestionIDs))
+	return nil
+}
+
+func runListTournaments() error {
+	tournamentRepo := models.NewTournamentRepository()
+	tournaments, err := tournamentRepo.ListAllTournaments()
+	if err != nil {
+		return fmt.Errorf("failed to list tournaments: %w", err)
+	}
+
+	if len(tournaments) == 0 {
+		fmt.Println("No tournaments found")
+		return nil
+	}
+
+	fmt.Printf("%-5s %-30s %-10s %-15s\n", "ID", "Name", "Active", "Questions")
+	fmt.Println(strings.Repeat("-", 65))
+	for _, tournament := range tournaments {
+		status := "No"
+		if tournament.Active {
+			status = "Yes"
+		}
+		fmt.Printf("%-5d %-30s %-10s %-15d\n", tournament.ID, tournament.Name, status, tournament.QuestionsCount)
+	}
+
+	return nil
+}
+
+func runActivateTournament(tournamentIDStr string) error {
+	tournamentID, err := strconv.Atoi(tournamentIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid tournament ID: %w", err)
+	}
+
+	tournamentRepo := models.NewTournamentRepository()
+	err = tournamentRepo.ActivateTournament(tournamentID)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Tournament with ID %d activated successfully", tournamentID)
+	return nil
+}
+
+func runDeactivateTournament(tournamentIDStr string) error {
+	tournamentID, err := strconv.Atoi(tournamentIDStr)
+	if err != nil {
+		return fmt.Errorf("invalid tournament ID: %w", err)
+	}
+
+	tournamentRepo := models.NewTournamentRepository()
+	err = tournamentRepo.DeactivateTournament(tournamentID)
+	if err != nil {
+		return err
+	}
+
+	log.Printf("Tournament with ID %d deactivated successfully", tournamentID)
 	return nil
 }
