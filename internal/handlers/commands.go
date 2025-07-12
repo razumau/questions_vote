@@ -47,7 +47,6 @@ func (h *BotHandler) handleStart(bot *telego.Bot, update telego.Update) {
 func (h *BotHandler) handleVote(bot *telego.Bot, update telego.Update) {
 	chatID := update.Message.Chat.ID
 
-	// Check rate limiting
 	canSendIn := h.rateLimiter.CanSendInSeconds(chatID)
 	if canSendIn > 0 {
 		log.Printf("Rate limited for chat %d, can send in %d seconds", chatID, canSendIn)
