@@ -53,7 +53,7 @@ func (h *BotHandler) sendQuestion(chatID int64, question *models.Question, numbe
 	if question.HandoutImg != "" {
 		_, err := h.bot.SendPhoto(context.Background(), &telego.SendPhotoParams{
 			ChatID: tu.ID(chatID),
-			Photo:  tu.FileFromURL(question.HandoutImg),
+			Photo:  tu.FileFromBytes([]byte(question.HandoutImg), "handout.jpg"),
 		})
 		if err != nil {
 			log.Printf("Failed to send handout image: %v", err)
